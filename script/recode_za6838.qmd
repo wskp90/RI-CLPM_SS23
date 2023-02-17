@@ -53,7 +53,9 @@ set.seed(42)
 ```{r}
   rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,magrittr,qs,tictoc)
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr)
 ```
 
 ## Prepare Lists
@@ -65,12 +67,10 @@ DF = list()
 ## Load Data
 
 ```{r}
-tic()
-load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
-toc()
-tic()
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
-toc()
+# toc()
 ```
 
 ## Check FRQ
@@ -106,6 +106,7 @@ DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.nume
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
 DF$orgdat %>% select(contains("_4046")) %>% psych::ICC()
+DF$orgdat %>% select(contains("_4046")) %>% irr::icc()
 
 ```
 
@@ -113,7 +114,8 @@ DF$orgdat %>% select(contains("_4046")) %>% psych::ICC()
 ## Recode
 
 ```{r}
-DF$orgdat %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+DF$orgdat %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+  mutate(across(contains("_4046"), ~as.numeric(.)))
 DF$orgdat %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) 
 
 DF$orgdat %<>% mutate(across(contains("_1570"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
