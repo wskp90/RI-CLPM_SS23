@@ -1,0 +1,125 @@
+---
+title: "Open and Merge GLES Panel"
+subtitle: "HRS: Survey"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *open 6 merge ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+format: html
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: source
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+  rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor)
+```
+
+## Prepare Lists
+
+```{r}
+spd = list()
+```
+
+## Load SPSS-Data
+
+```{r}
+spd$za6838w9 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w1to9_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w10 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w10_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w11 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w11_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w12 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w12_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w13 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w13_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838wa2 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_wa2_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w14 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w14_sA_v5-0-0.sav"),drop.labels = T)
+spd$za6838w15 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w15_sA_v5-0-0.sav"),drop.labels = T)
+spd$za7722w16 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7722_v2-0-0.sav"),drop.labels = T)
+spd$za7723w17 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7723_v2-0-0.sav"),drop.labels = T)
+spd$za7724w18 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7724_v2-0-0.sav"),drop.labels = T)
+spd$za7725w19 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7725_v1-0-0.sav"),drop.labels = T)
+spd$za7726w20 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7726_v2-0-0.sav"),drop.labels = T)
+spd$za7727w21 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7727_v1-0-0.sav"),drop.labels = T)
+spd$za7728w22 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7728_v1-0-0.sav"),drop.labels = T)
+spd$za7729w23 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7729_v1-0-0.sav"),drop.labels = T)
+```
+
+## Merge Waves
+
+```{r}
+za6838kum = full_join(spd$za6838w9,spd$za6838w10, by= "lfdn", suffix = c(".w9", ".w10"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838w11, by= "lfdn", suffix = c(".w9", ".w11"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838w12, by= "lfdn", suffix = c(".w9", ".w12"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838w13, by= "lfdn", suffix = c(".w9", ".w13"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838wa2, by= "lfdn", suffix = c(".w9", ".wa2"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838w14, by= "lfdn", suffix = c(".w9", ".w14"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za6838w15, by= "lfdn", suffix = c(".w9", ".w15"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7722w16, by= "lfdn", suffix = c(".w9", ".w16"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7723w17, by= "lfdn", suffix = c(".w9", ".w17"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7724w18, by= "lfdn", suffix = c(".w9", ".w18"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7725w19, by= "lfdn", suffix = c(".w9", ".w19"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7726w20, by= "lfdn", suffix = c(".w9", ".w20"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7727w21, by= "lfdn", suffix = c(".w9", ".w21"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7728w22, by= "lfdn", suffix = c(".w9", ".w22"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+za6838kum = full_join(za6838kum,spd$za7729w23, by= "lfdn", suffix = c(".w9", ".w23"))
+za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+```
+
+## Save DATA
+
+```{r}
+save(za6838kum, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+```

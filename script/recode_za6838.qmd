@@ -1,0 +1,128 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "HRS: Survey"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+format: html
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: visual
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+  rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,magrittr)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+```
+
+## Check FRQ
+
+```{r}
+za6838kum %>% select(contains("_1600")) %>% frq
+za6838kum %>% select(contains("_1610")) %>% frq
+za6838kum %>% select(contains("_1632")) %>% frq
+za6838kum %>% select(contains("_1631")) %>% frq
+za6838kum %>% select(contains("_1933")) %>% frq
+za6838kum %>% select(contains("_4043")) %>% frq
+za6838kum %>% select(contains("_4046")) %>% frq
+za6838kum %>% select(contains("_2880bo")) %>% frq
+za6838kum %>% select(contains("_1570g")) %>% frq
+za6838kum %>% select(contains("19_2880")) %>% frq
+za6838kum %>% select(contains("_1616A")) %>% frq
+za6838kum %>% select(contains("_1800")) %>% frq
+
+```
+
+
+## Check Correlations
+```{r}
+za6838kum %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+  psych::cor.plot(.,stars = T)
+za6838kum %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+  psych::corr.test()
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+za6838kum %>% select(contains("_4046")) %>% psych::ICC()
+
+```
+
+
+## Recode
+
+```{r}
+za6838kum %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+za6838kum %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) 
+
+za6838kum %<>% mutate(across(contains("_1570"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+
+za6838kum %>% select(ends_with("_1570g")) %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
+  psych::ICC(.)
+za6838kum %>% select("kp15_4046","kp19_4046","kp23_4046") %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
+  psych::ICC()
+za6838kum %>% select(contains("_4046")) %>% psych::corr.test()
+```
+
+## Save DATA
+
+```{r}
+spd$za6838kum %>% save(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+```
