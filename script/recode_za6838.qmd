@@ -76,27 +76,28 @@ toc()
 ## Check FRQ
 
 ```{r}
-za6838kum %>% select(contains("_1600")) %>% frq
-za6838kum %>% select(contains("_1610")) %>% frq
-za6838kum %>% select(contains("_1632")) %>% frq
-za6838kum %>% select(contains("_1631")) %>% frq
-za6838kum %>% select(contains("_1933")) %>% frq
-za6838kum %>% select(contains("_4043")) %>% frq
-za6838kum %>% select(contains("_4046")) %>% frq
-za6838kum %>% select(contains("_2880bo")) %>% frq
-za6838kum %>% select(contains("_1570g")) %>% frq
-za6838kum %>% select(contains("19_2880")) %>% frq
-za6838kum %>% select(contains("_1616A")) %>% frq
-za6838kum %>% select(contains("_1800")) %>% frq
-
+tic()
+DF$orgdat %>% select(contains("_1600")) %>% frq
+DF$orgdat %>% select(contains("_1610")) %>% frq
+DF$orgdat %>% select(contains("_1632")) %>% frq
+DF$orgdat %>% select(contains("_1631")) %>% frq
+DF$orgdat %>% select(contains("_1933")) %>% frq
+DF$orgdat %>% select(contains("_4043")) %>% frq
+DF$orgdat %>% select(contains("_4046")) %>% frq
+DF$orgdat %>% select(contains("_2880bo")) %>% frq
+DF$orgdat %>% select(contains("_1570g")) %>% frq
+DF$orgdat %>% select(contains("19_2880")) %>% frq
+DF$orgdat %>% select(contains("_1616A")) %>% frq
+DF$orgdat %>% select(contains("_1800")) %>% frq
+toc()
 ```
 
 
 ## Check Correlations
 ```{r}
-za6838kum %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
   psych::cor.plot(.,stars = T)
-za6838kum %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
   psych::corr.test()
 ```
 
@@ -104,7 +105,7 @@ za6838kum %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.nume
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
-za6838kum %>% select(contains("_4046")) %>% psych::ICC()
+DF$orgdat %>% select(contains("_4046")) %>% psych::ICC()
 
 ```
 
@@ -112,22 +113,22 @@ za6838kum %>% select(contains("_4046")) %>% psych::ICC()
 ## Recode
 
 ```{r}
-za6838kum %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
-za6838kum %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) 
+DF$orgdat %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+DF$orgdat %<>% mutate(across(contains("_4046"), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) 
 
-za6838kum %<>% mutate(across(contains("_1570"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+DF$orgdat %<>% mutate(across(contains("_1570"), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
 
-za6838kum %>% select(ends_with("_1570g")) %>% 
+DF$orgdat %>% select(ends_with("_1570g")) %>% 
   mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC(.)
-za6838kum %>% select("kp15_4046","kp19_4046","kp23_4046") %>% 
+DF$orgdat %>% select("kp15_4046","kp19_4046","kp23_4046") %>% 
   mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC()
-za6838kum %>% select(contains("_4046")) %>% psych::corr.test()
+DF$orgdat %>% select(contains("_4046")) %>% psych::corr.test()
 ```
 
 ## Save DATA
 
 ```{r}
-spd$za6838kum %>% save(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+spd$DF$orgdat %>% save(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 ```
