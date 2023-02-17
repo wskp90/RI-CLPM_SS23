@@ -53,7 +53,7 @@ set.seed(42)
 ```{r}
   rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,magrittr)
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,magrittr,qs,tictoc)
 ```
 
 ## Prepare Lists
@@ -65,7 +65,12 @@ DF = list()
 ## Load Data
 
 ```{r}
+tic()
 load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+toc()
+tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+toc()
 ```
 
 ## Check FRQ
