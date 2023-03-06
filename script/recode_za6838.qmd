@@ -70,15 +70,17 @@ DF = list()
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/models.R"))
 # toc()
 ```
 
 ## Check FRQ
 
 ```{r}
-tic()
-DF$orgdat %>% select(contains("_1600")) %>% frq
+# tic()
+DF$orgdat %>% select(contains("_1600")) %>% select(starts_with(c("kp17","kp18","kp19"))) %>%frq
 DF$orgdat %>% select(contains("_1610")) %>% frq
+DF$orgdat %>% select(contains("kp19_1615")) %>% frq
 DF$orgdat %>% select(contains("_1632")) %>% frq
 DF$orgdat %>% select(contains("_1631")) %>% frq
 DF$orgdat %>% select(contains("_1933")) %>% frq
@@ -89,13 +91,14 @@ DF$orgdat %>% select(contains("_1570g")) %>% frq
 DF$orgdat %>% select(contains("19_2880")) %>% frq
 DF$orgdat %>% select(contains("_1616A")) %>% frq
 DF$orgdat %>% select(contains("_1800")) %>% frq
-toc()
+# toc()
 ```
 
 
 ## Check Correlations
 ```{r}
 DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
   psych::cor.plot(.,stars = T)
 DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
   psych::corr.test()
@@ -104,6 +107,13 @@ DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.nume
 ## Check ICC
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+  psych::ICC()
+DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+  irr::icc()
 
 DF$orgdat %>% select(contains("_4046")) %>% psych::ICC()
 DF$orgdat %>% select(contains("_4046")) %>% irr::icc()
@@ -123,14 +133,18 @@ DF$orgdat %<>% mutate(across(contains("_1570"), ~rec(., rec = "-99,-95,-93=NA; e
 DF$orgdat %>% select(ends_with("_1570g")) %>% 
   mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC(.)
+DF$orgdat %>% select(ends_with("_1570g")) %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
+ irr::icc(.)
+
 DF$orgdat %>% select("kp15_4046","kp19_4046","kp23_4046") %>% 
   mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC()
 DF$orgdat %>% select(contains("_4046")) %>% psych::corr.test()
 ```
 
-## Save DATA
+## Save DATA, if neccessary
 
 ```{r}
-spd$DF$orgdat %>% save(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
 ```
