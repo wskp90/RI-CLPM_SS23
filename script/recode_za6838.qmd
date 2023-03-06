@@ -53,9 +53,9 @@ set.seed(42)
 ```{r}
   rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,easystats,irr)
+               psych,easystats,irr,lavaan,semTools,semPlot,broom)
 ```
 
 ## Prepare Lists
@@ -78,7 +78,7 @@ source(here("script/models.R"))
 
 ```{r}
 # tic()
-DF$orgdat %>% select(contains("_1600")) %>% select(starts_with(c("kp17","kp18","kp19"))) %>%frq
+DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610"))) %>% frq
 DF$orgdat %>% select(contains("_1610")) %>% frq
 DF$orgdat %>% select(contains("kp19_1615")) %>% frq
 DF$orgdat %>% select(contains("_1632")) %>% frq
@@ -97,10 +97,12 @@ DF$orgdat %>% select(contains("_1800")) %>% frq
 
 ## Check Correlations
 ```{r}
-DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
-  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610"))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy"))) %>%
   psych::cor.plot(.,stars = T)
-DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+
+DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610"))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>% 
   psych::corr.test()
 ```
 
@@ -108,15 +110,18 @@ DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.nume
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
-DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+DF$orgdat %>% select("kp17_1600","kp18_1600","kp19_1600") %>%
   mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC()
-DF$orgdat %>% select(contains("_4046")) %>% mutate(across(everything(), ~as.numeric(.))) %>%
+DF$orgdat %>% select("kp17_1600","kp18_1600","kp19_1600") %>%
   mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
   irr::icc()
-
-DF$orgdat %>% select(contains("_4046")) %>% psych::ICC()
-DF$orgdat %>% select(contains("_4046")) %>% irr::icc()
+DF$orgdat %>% select("kp17_1610","kp18_1600","kp19_1610") %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; -97=1;else = copy"))) %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>%
+  irr::icc()
 
 ```
 
@@ -141,6 +146,25 @@ DF$orgdat %>% select("kp15_4046","kp19_4046","kp23_4046") %>%
   mutate(across(everything(), ~as.numeric(.))) %>%
   psych::ICC()
 DF$orgdat %>% select(contains("_4046")) %>% psych::corr.test()
+```
+
+## CLPM
+```{r}
+DF$int_sm = DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610"))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
+names(DF$int_sm)<- c("w1_med", "w2_med", "w3_med", "w1_wis", "w2_wis", "w3_wis")
+DF$.int_sm.fit <- lavaan::sem(DF$clpm, data=DF$int_sm, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$.int_sm.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$.int_sm.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$.int_sm.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = F, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("BTW21 Internet/Social Media")
+
+
 ```
 
 ## Save DATA, if neccessary
