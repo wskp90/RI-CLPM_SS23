@@ -79,7 +79,7 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat_2 = DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19")) & contains(c("_1600","_1933")) & !ends_with("flag")) 
+DF$semdat_2 = DF$orgdat %>% select(contains(c("_1600","_1933")) & !ends_with("flag") & starts_with(c("kp17","kp18","kp19")))
 ```
 
 
