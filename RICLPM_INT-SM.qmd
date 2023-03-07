@@ -1,6 +1,6 @@
 ---
 title: "RECODE GLES Panel"
-subtitle: "HRS: Survey"
+subtitle: "Internet vs Social Media-Nutzung"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
