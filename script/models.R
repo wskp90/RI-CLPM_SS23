@@ -1,7 +1,6 @@
-# 3-Wellen RICLPM Unconstrained####
 # Isabelle Hansson, Department of Psychology, University of Gothenburg, Sweden/Flournoy
 
-# CLPModell Defintion unconsrained ####
+# CLPModell 3 Wellen Defintion unconsrained ####
 DF$clpm <-
 '
 #Resiudal Correlation
@@ -36,9 +35,34 @@ LM3 ~ co06*LM2 + co10*LW2
 LW2 ~ co07*LW1 + co11*LM1
 LW3 ~ co08*LW2 + co12*LM2
 '
+# CLPModell 4 Wellen Defintion unconsrained ####
+DF$clpm_L4 <-
+  '
+#LATENT FACTORS
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LM4 =~ 1*m4
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
+LW4 =~ 1*w4
 
+#Resiudal Correlation
+LM1 ~~ co01*LW1
+LM2 ~~ co02*LW2
+LM3 ~~ co03*LW3
+LM4 ~~ co04*LW4
 
-
+#Stability & Crosslagged Paths
+LM2 ~ ar11*LM1 + cc11*LW1
+LM3 ~ ar12*LM2 + cc12*LW2
+LM4 ~ ar13*LM3 + cc13*LW3
+LW2 ~ ar21*LW1 + cc21*LM1
+LW3 ~ ar22*LW2 + cc22*LM2
+LW4 ~ ar23*LW3 + cc23*LM3
+'
+# RI-CLPModell 3 Wellen Defintion unconsrained ####
 DF$riclpm <-
 '
 #RANDOM INTERCEPTS
@@ -79,3 +103,50 @@ LM3 ~ sp06*LM2 + cl10*LW2
 LW2 ~ sp07*LW1 + cl11*LM1
 LW3 ~ sp08*LW2 + cl12*LM2
 '
+# RI-CLPModell 4 Wellen Defintion unconsrained ####
+DF$riclpm4 <-
+  '
+#RANDOM INTERCEPTS
+RIM =~ 1*m1 + 1*m2 + 1*m3 + 1*m4
+RIW =~ 1*w1 + 1*w2 + 1*w3 + 1*w4
+
+#LATENT FACTORS
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LM4 =~ 1*m4
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
+LW4 =~ 1*w4
+
+#VARIANCES @0 OF OBSERVED SCORES
+m1 ~~ 0*m1
+m2 ~~ 0*m2
+m3 ~~ 0*m3
+m4 ~~ 0*m4
+w1 ~~ 0*w1
+w2 ~~ 0*w2
+w3 ~~ 0*w3
+w4 ~~ 0*w4
+
+#LATENT FACTORS COVARIANCES @0
+RIM ~~ 0*LM1
+RIM ~~ 0*LW1
+RIW ~~ 0*LM1
+RIW ~~ 0*LW1
+
+#CORRELATIONS
+LM1 ~~ co01*LW1
+LM2 ~~ co02*LW2
+LM3 ~~ co03*LW3
+LM4 ~~ co04*LW4
+RIM ~~ co00*RIW
+
+#Stability & LAGGED EFFECTS
+LM2 ~ sp11*LM1 + cc11*LW1
+LM3 ~ sp12*LM2 + cc12*LW2
+LM4 ~ sp13*LM3 + cc13*LW3
+LW2 ~ sp21*LW1 + cc21*LM1
+LW3 ~ sp22*LW2 + cc22*LM2
+LW4 ~ sp23*LW3 + cc32*LM3'

@@ -1,6 +1,6 @@
 ---
 title: "RICLPM GLES Panel"
-subtitle: "Internet & Gespräche"
+subtitle: "Internet & Gespräche 2017"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
@@ -30,8 +30,6 @@ editor_options:
 ## Global settings & Notes
 
 ```{r}
-#| label: Global settings & Note
-
 rm(list= ls()) # start clean ####
 # show chunk outputs in R-Markdown
 knitr::opts_chunk$set(echo = TRUE)
@@ -79,40 +77,51 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat_2 = DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19")) & contains(c("_1600","_1933")) & !ends_with("flag")) 
+DF$semdat_3 = DF$orgdat %>% select(contains(c("_1600","_1933")) & !ends_with("flag") & starts_with(c("kp3","kp4","kp5","kp6"))) 
+
+DF$semdat_3_long = DF$semdat_3 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+names(DF$semdat_3_long) = c("Welle","m","w")
+head(DF$semdat_3_long)
+
 ```
-
-
 
 ## Check FRQ
 
 ```{r}
 # tic()
 
-DF$semdat_2 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$semdat_3 %>% summary(.,maxsum = 20) %>% knitr::kable() 
 # toc()
 ```
 
 
 ## Check Correlations
 ```{r}
-DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy"))) %>%
-  psych::cor.plot(.,stars = T)
-DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>%
+DF$semdat_3 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
   psych::cor.plot(.,stars = T)
 
-DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>% 
+DF$semdat_3 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA;else = copy"))) %>% 
   psych::corr.test()
+
+DF$semdat_3_long %>% select(!"Welle") %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA;else = copy"))) %>% 
+  psych::corr.test()
+DF$semdat_3 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+  gather(key, value) %>% separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+  ggplot(aes(x = value, color = Welle)) +
+  geom_density(adjust = 1.6) + 
+  facet_wrap(vars(Var)) + 
+  theme_classic()
 ```
 
 ## Check ICC
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
-DF$semdat_2 %>% select(contains(c("_1600"))) %>% 
+DF$semdat_3 %>% select(contains(c("_1600"))) %>% 
                          mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% irr::icc()
-DF$semdat_2 %>% select(contains(c("_1933"))) %>% 
-                         mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA; else = copy"))) %>% irr::icc()
+DF$semdat_3 %>% select(contains(c("_1933"))) %>% 
+                         mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) %>% irr::icc()
 
 ```
 
@@ -120,14 +129,22 @@ DF$semdat_2 %>% select(contains(c("_1933"))) %>%
 # SEM
 ## Prepare VARS
 ```{r}
-DF$semdat_2 %<>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
-names(DF$semdat_2)<- c("m1", "m2", "m3", "w1", "w2", "w3")
+DF$semdat_3 %<>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA;else = copy")))
+names(DF$semdat_3)<- c("m1", "m2", "m3","m4", "w1", "w2", "w3","w4")
 ```
 
+```{r}
+#| include: false
+DF$semdat_3_long = DF$semdat_3 %>% pivot_longer(cols = everything(), cols_vary = "slowest", names_to = c(".value","set"), names_pattern = "(.)(.)")
+
+DF$semdat_3_long %>% select(!"set") %>% psych::corr.test()
+
+
+```
 
 ## CLPM Latent
 ```{r}
-DF$.int_smL.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat_2, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+DF$.int_smL.fit <- lavaan::sem(DF$clpm_L4, data=DF$semdat_3, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
 broom::glance(DF$.int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
 broom::tidy(DF$.int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
@@ -143,7 +160,7 @@ title("BTW21 Internet/Gespräche")
 ```{r}
 #| warning: false
 tic()
-DF$.int_smR.fit <- lavaan::sem(DF$riclpm, data=DF$semdat_2, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+DF$.int_smR.fit <- lavaan::sem(DF$riclpm4, data=DF$semdat_3, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
 broom::glance(DF$.int_smR.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
 broom::tidy(DF$.int_smR.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
