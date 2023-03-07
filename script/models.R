@@ -3,56 +3,79 @@
 
 # CLPModell Defintion unconsrained ####
 DF$clpm <-
-  '
+'
 #Resiudal Correlation
-w1_med ~~ co01*w1_wis
-w2_med ~~ co02*w2_wis
-w3_med ~~ co03*w3_wis
+m1 ~~ co01*w1
+m2 ~~ co02*w2
+m3 ~~ co03*w3
 
 #Stability & Crosslagged Paths
-w2_med ~ co05*w1_med + co09*w1_wis
-w3_med ~ co06*w2_med + co10*w2_wis
-w2_wis ~ co07*w1_wis + co11*w1_med
-w3_wis ~ co08*w2_wis + co12*w2_med'
+m2 ~ co05*m1 + co09*w1
+m3 ~ co06*m2 + co10*w2
+w2 ~ co07*w1 + co11*m1
+w3 ~ co08*w2 + co12*m2'
+
+DF$clpm_L <-
+'
+#LATENT FACTORS
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
+
+#Resiudal Correlation
+LM1 ~~ co01*LW1
+LM2 ~~ co02*LW2
+LM3 ~~ co03*LW3
+
+#Stability & Crosslagged Paths
+LM2 ~ co05*LM1 + co09*LW1
+LM3 ~ co06*LM2 + co10*LW2
+LW2 ~ co07*LW1 + co11*LM1
+LW3 ~ co08*LW2 + co12*LM2
+'
 
 
 
 DF$riclpm <-
-  '
+'
 #RANDOM INTERCEPTS
-RI_med =~ 1*w1_med + 1*w2_med + 1*w3_med
-RI_wis =~ 1*w1_wis + 1*w2_wis + 1*w3_wis
+RIM =~ 1*m1 + 1*m2 + 1*m3
+RIW =~ 1*w1 + 1*w2 + 1*w3
 
 #LATENT FACTORS
-L1_med =~ 1*w1_med #each factor loading set to 1
-L2_med =~ 1*w2_med 
-L3_med =~ 1*w3_med
-L1_wis =~ 1*w1_wis
-L2_wis =~ 1*w2_wis
-L3_wis =~ 1*w3_wis
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
 
 #VARIANCES @0 OF OBSERVED SCORES
-w1_med ~~ 0*w1_med
-w2_med ~~ 0*w2_med
-w3_med ~~ 0*w3_med
-w1_wis ~~ 0*w1_wis
-w2_wis ~~ 0*w2_wis
-w3_wis ~~ 0*w3_wis
+m1 ~~ 0*m1
+m2 ~~ 0*m2
+m3 ~~ 0*m3
+w1 ~~ 0*w1
+w2 ~~ 0*w2
+w3 ~~ 0*w3
 
 #LATENT FACTORS COVARIANCES @0
-RI_med ~~ 0*L1_med
-RI_med ~~ 0*L1_wis
-RI_wis ~~ 0*L1_med
-RI_wis ~~ 0*L1_wis
+RIM ~~ 0*LM1
+RIM ~~ 0*LW1
+RIW ~~ 0*LM1
+RIW ~~ 0*LW1
 
 #CORRELATIONS
-L1_med ~~ co01*L1_wis
-L2_med ~~ co02*L2_wis
-L3_med ~~ co03*L3_wis
-RI_med ~~ co04*RI_wis
+LM1 ~~ co01*LW1
+LM2 ~~ co02*LW2
+LM3 ~~ co03*LW3
+RIM ~~ co04*RIW
 
 #Stability & LAGGED EFFECTS
-L2_med ~ sp05*L1_med + cl09*L1_wis
-L3_med ~ sp06*L2_med + cl10*L2_wis
-L2_wis ~ sp07*L1_wis + cl11*L1_med
-L3_wis ~ sp08*L2_wis + cl12*L2_med'
+LM2 ~ sp05*LM1 + cl09*LW1
+LM3 ~ sp06*LM2 + cl10*LW2
+LW2 ~ sp07*LW1 + cl11*LM1
+LW3 ~ sp08*LW2 + cl12*LM2
+'
