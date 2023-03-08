@@ -186,7 +186,7 @@ LW5 ~ ar24*LW4 + cc24*LM4
 '
 # RI-CLPModell 5 Wellen Definition unconstrained ####
 DF$riclpm5 <-
-  '
+'
 #RANDOM INTERCEPTS
 RIM =~ 1*m1 + 1*m2 + 1*m3 + 1*m4 + 1*m5
 RIW =~ 1*w1 + 1*w2 + 1*w3 + 1*w4 + 1*w5
@@ -228,7 +228,6 @@ LM2 ~~ co02*LW2
 LM3 ~~ co03*LW3
 LM4 ~~ co04*LW4
 LM4 ~~ co05*LW4
-RIM ~~ co00*RIW
 
 #Stability & LAGGED EFFECTS
 LM2 ~ sp11*LM1 + cc11*LW1
@@ -240,3 +239,93 @@ LW2 ~ sp21*LW1 + cc21*LM1
 LW3 ~ sp22*LW2 + cc22*LM2
 LW4 ~ sp23*LW3 + cc23*LM3
 LW5 ~ sp24*LW4 + cc24*LM4'
+
+# CLPModell 5 Wellen Definition unconstrained ####
+DF$clpm_L5C <-
+  '
+#LATENT FACTORS
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LM4 =~ 1*m4
+LM5 =~ 1*m5
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
+LW4 =~ 1*w4
+LW5 =~ 1*w5
+
+#Resiudal Correlation
+LM1 ~~ co00*LW1
+LM2 ~~ co00*LW2
+LM3 ~~ co00*LW3
+LM4 ~~ co00*LW4
+LM5 ~~ co00*LW5
+
+#Stability & Crosslagged Paths
+LM2 ~ ar10*LM1 + cc10*LW1
+LM3 ~ ar10*LM2 + cc10*LW2
+LM4 ~ ar10*LM3 + cc10*LW3
+LM5 ~ ar10*LM4 + cc10*LW4
+
+LW2 ~ ar20*LW1 + cc20*LM1
+LW3 ~ ar20*LW2 + cc20*LM2
+LW4 ~ ar20*LW3 + cc20*LM3
+LW5 ~ ar20*LW4 + cc20*LM4
+'
+
+# RI-CLPModell 5 Wellen Definition constrained ####
+DF$riclpm5C <-
+'
+#RANDOM INTERCEPTS
+RIM =~ 1*m1 + 1*m2 + 1*m3 + 1*m4 + 1*m5
+RIW =~ 1*w1 + 1*w2 + 1*w3 + 1*w4 + 1*w5
+
+#LATENT FACTORS
+LM1 =~ 1*m1 #each factor loading set to 1
+LM2 =~ 1*m2 
+LM3 =~ 1*m3
+LM4 =~ 1*m4
+LM5 =~ 1*m5
+LW1 =~ 1*w1
+LW2 =~ 1*w2
+LW3 =~ 1*w3
+LW4 =~ 1*w4
+LW5 =~ 1*w5
+
+#VARIANCES @0 OF OBSERVED SCORES
+m1 ~~ 0*m1
+m2 ~~ 0*m2
+m3 ~~ 0*m3
+m4 ~~ 0*m4
+m5 ~~ 0*m5
+w1 ~~ 0*w1
+w2 ~~ 0*w2
+w3 ~~ 0*w3
+w4 ~~ 0*w4
+w5 ~~ 0*w5
+
+#LATENT FACTORS COVARIANCES @0
+RIM ~~ 0*LM1
+RIM ~~ 0*LW1
+RIW ~~ 0*LM1
+RIW ~~ 0*LW1
+
+#CORRELATIONS
+RIM ~~ co00*RIW
+LM1 ~~ co01*LW1
+LM2 ~~ co01*LW2
+LM3 ~~ co01*LW3
+LM4 ~~ co01*LW4
+LM4 ~~ co01*LW4
+
+#Stability & LAGGED EFFECTS
+LM2 ~ sp10*LM1 + cc10*LW1
+LM3 ~ sp10*LM2 + cc10*LW2
+LM4 ~ sp10*LM3 + cc10*LW3
+LM5 ~ sp10*LM4 + cc10*LW4
+
+LW2 ~ sp20*LW1 + cc20*LM1
+LW3 ~ sp20*LW2 + cc20*LM2
+LW4 ~ sp20*LW3 + cc20*LM3
+LW5 ~ sp20*LW4 + cc20*LM4'

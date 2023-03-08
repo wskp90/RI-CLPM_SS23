@@ -1,6 +1,6 @@
 ---
 title: "RECODE GLES Panel"
-subtitle: "Political Efficacy"
+subtitle: "Political Efficacy - Fully Contrained Models"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
@@ -185,14 +185,29 @@ DF$semdat_1 %>% select(contains(c("_inef"))) %>% irr::icc()
 ```{r}
 DF$semdat_1 %<>% select(contains(c("_020","_exef")) & starts_with(c("kp14","kp15","kp16","kp17","kp18"))) %>% 
   mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
-DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+
 names(DF$semdat_1)<- c("m1", "m2", "m3", "m4", "m5","w1", "w2", "w3", "w4", "w5")
-DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+
+# DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 ```
 
 ## CLPM Latent
 ```{r}
 DF$.int_smL.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$.int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
+broom::tidy(DF$.int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$.int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("DemZufriedenheit/External Efficacy")
+```
+
+## CLPM Latent Contrained
+```{r}
+DF$.int_smL.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
 broom::glance(DF$.int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
 broom::tidy(DF$.int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
@@ -221,6 +236,22 @@ title("DemZufriedenheit/External Efficacy")
 toc()
 ```
 
+## RI-CLPM Constrained
+```{r}
+#| warning: false
+tic()
+DF$.int_smR.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$.int_smR.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
+broom::tidy(DF$.int_smR.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$.int_smR.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("DemZufriedenheit/External Efficacy")
+toc()
+```
 
 
 ## Save DATA, if neccessary
