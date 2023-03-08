@@ -77,7 +77,13 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat_1 = DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610")))
+DF$semdat_1 = DF$orgdat %>% select(contains(c("_1600","_1610")) & starts_with(c("kp17","kp18","kp19")))
+head(DF$semdat_1)
+DF$semdat_1_long = DF$semdat_1 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+head(DF$semdat_1_long)
+
+names(DF$semdat_1_long) = c("Welle","m","w")
+
 ```
 
 
@@ -98,9 +104,18 @@ DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;el
 DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>%
   psych::cor.plot(.,stars = T)
 
-DF$orgdat %>% select(starts_with(c("kp17","kp18","kp19"))) %>% select(contains(c("_1600","_1610"))) %>%
-  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>% 
+DF$semdat_1_long %>% select(!"Welle") %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+  drop_na() %>% 
   psych::corr.test()
+DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+  gather(key, value) %>% drop_na() %>% 
+  separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+  ggplot(aes(x = value, color = Welle)) +
+  geom_density(adjust = 1.6) + 
+  facet_wrap(vars(Var)) + 
+  theme_classic()
+
 ```
 
 ## Check ICC
@@ -129,7 +144,7 @@ names(DF$semdat_1)<- c("m1", "m2", "m3", "w1", "w2", "w3")
 #| echo: false
 #| include: false
 DF$.int_sm.fit <- lavaan::sem(DF$clpm, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
-broom::glance(DF$.int_sm.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::glance(DF$.int_sm.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
 broom::tidy(DF$.int_sm.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 

@@ -1,0 +1,230 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "Political Efficacy"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/models.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+## Select Vars
+```{r}
+DF$semdat_1 = DF$orgdat %>% select(contains(c("_020","_050a","_050e","_050h","_050k")) & starts_with(c("kp14","kp15","kp16","kp17","kp18")) & !ends_with("be"))
+head(DF$semdat_1)
+# DF$semdat_1_long = DF$semdat_1 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+# head(DF$semdat_1_long)
+# names(DF$semdat_1_long) = c("Welle","m","w")
+
+
+```
+
+
+
+## Check FRQ
+```{r}
+# tic()
+DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+# toc()
+```
+
+
+## Check Correlations
+```{r}
+DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy"))) %>%
+  psych::cor.plot(.,stars = T)
+
+# DF$semdat_1_long %>% select(!"Welle") %>%
+#   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   drop_na() %>% 
+#   psych::corr.test()
+# DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   gather(key, value) %>% drop_na() %>% 
+#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+#   ggplot(aes(x = value, color = Welle)) +
+#   geom_density(adjust = 1.6) + 
+#   facet_wrap(vars(Var)) + 
+#   theme_classic()
+```
+
+# Factor Analysis
+## Prepare Data {.unlisted .unnumbered}
+```{r}
+#| echo: false
+#| include: false
+
+DF$w14_efa = DF$semdat_1 %>% select(ends_with(c("_050a","_050e","_050h","_050k"))) %>%
+  mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy")))
+```
+
+## Preliminary Analyse {.unlisted .unnumbered}
+```{r}
+#| echo: false
+#| include: false
+parameters::n_factors(DF$w14_efa) %>% knitr::kable(.,format= 'markdown')
+DF$w14_efa %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$w14_efa %>% psych::cor.plot(.,stars = T)
+DF$w14_efa.fa = fa(DF$w14_efa, nfactors = 2, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
+DF$w14_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
+DF$w14_effi = factor.scores(DF$w14_efa,DF$w14_efa.fa)
+DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  psych::cor.plot(.,stars = T)
+
+```
+
+## Perform Analysis
+
+```{r}
+DF$kp14_eff_pca = DF$semdat_1 %>% select(starts_with("kp14") & contains("_050")) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  principal_components(.,rotation = "oblimin", n = 2) %>% get_scores() %>%
+  rename(kp14_exef = Component_1, kp14_inef = Component_2)
+DF$kp15_eff_pca = DF$semdat_1 %>% select(starts_with("kp15") & contains("_050")) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  principal_components(.,rotation = "oblimin", n = 2) %>% get_scores() %>%
+  rename(kp15_exef = Component_1, kp15_inef = Component_2)
+DF$kp16_eff_pca = DF$semdat_1 %>% select(starts_with("kp16") & contains("_050")) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  principal_components(.,rotation = "oblimin", n = 2) %>% get_scores() %>%
+  rename(kp16_exef = Component_1, kp16_inef = Component_2)
+DF$kp17_eff_pca = DF$semdat_1 %>% select(starts_with("kp17") & contains("_050")) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  principal_components(.,rotation = "oblimin", n = 2) %>% get_scores() %>%
+  rename(kp17_exef = Component_1, kp17_inef = Component_2)
+DF$kp18_eff_pca = DF$semdat_1 %>% select(starts_with("kp18") & contains("_050")) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
+  principal_components(.,rotation = "oblimin", n = 2) %>% get_scores() %>%
+  rename(kp18_exef = Component_1, kp18_inef = Component_2)
+# Rebind DATA
+DF$semdat_1 = cbind(DF$semdat_1,DF$kp14_eff_pca,DF$kp15_eff_pca,DF$kp16_eff_pca,DF$kp17_eff_pca,DF$kp18_eff_pca)
+```
+
+
+
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+DF$semdat_1 %>% select(contains(c("_020"))) %>% 
+                         mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% irr::icc()
+DF$semdat_1 %>% select(contains(c("_exef"))) %>% irr::icc()
+DF$semdat_1 %>% select(contains(c("_inef"))) %>% irr::icc()
+```
+
+
+# SEM
+## Prepare VARS
+```{r}
+DF$semdat_1 %<>% select(contains(c("_020","_exef")) & starts_with(c("kp14","kp15","kp16","kp17","kp18"))) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
+DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+names(DF$semdat_1)<- c("m1", "m2", "m3", "m4", "m5","w1", "w2", "w3", "w4", "w5")
+DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+```
+
+## CLPM Latent
+```{r}
+DF$.int_smL.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$.int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
+broom::tidy(DF$.int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$.int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("DemZufriedenheit/External Efficacy")
+```
+
+## RI-CLPM
+```{r}
+#| warning: false
+tic()
+DF$.int_smR.fit <- lavaan::sem(DF$riclpm5, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$.int_smR.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3)) %>% knitr::kable(.,format= 'markdown')
+broom::tidy(DF$.int_smR.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$.int_smR.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("DemZufriedenheit/External Efficacy")
+toc()
+```
+
+
+
+## Save DATA, if neccessary
+```{r}
+#| include: false
+# DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
+```
