@@ -174,15 +174,15 @@ LM4 ~~ co04*LW4
 LM5 ~~ co04*LW5
 
 #Stability & Crosslagged Paths
-LM2 ~ ar11*LM1 + cc11*LW1
-LM3 ~ ar12*LM2 + cc12*LW2
-LM4 ~ ar13*LM3 + cc13*LW3
 LM5 ~ ar14*LM4 + cc14*LW4
+LM4 ~ ar13*LM3 + cc13*LW3
+LM3 ~ ar12*LM2 + cc12*LW2
+LM2 ~ ar11*LM1 + cc11*LW1
 
-LW2 ~ ar21*LW1 + cc21*LM1
-LW3 ~ ar22*LW2 + cc22*LM2
-LW4 ~ ar23*LW3 + cc23*LM3
 LW5 ~ ar24*LW4 + cc24*LM4
+LW4 ~ ar23*LW3 + cc23*LM3
+LW3 ~ ar22*LW2 + cc22*LM2
+LW2 ~ ar21*LW1 + cc21*LM1
 '
 # RI-CLPModell 5 Wellen Definition unconstrained ####
 DF$riclpm5 <-
@@ -240,7 +240,7 @@ LW3 ~ sp22*LW2 + cc22*LM2
 LW4 ~ sp23*LW3 + cc23*LM3
 LW5 ~ sp24*LW4 + cc24*LM4'
 
-# CLPModell 5 Wellen Definition unconstrained ####
+# CLPModell 5 Wellen Definition constrained ####
 DF$clpm_L5C <-
   '
 #LATENT FACTORS
@@ -263,15 +263,15 @@ LM4 ~~ co00*LW4
 LM5 ~~ co00*LW5
 
 #Stability & Crosslagged Paths
-LM2 ~ ar10*LM1 + cc10*LW1
-LM3 ~ ar10*LM2 + cc10*LW2
-LM4 ~ ar10*LM3 + cc10*LW3
 LM5 ~ ar10*LM4 + cc10*LW4
+LM4 ~ ar10*LM3 + cc10*LW3
+LM3 ~ ar10*LM2 + cc10*LW2
+LM2 ~ ar10*LM1 + cc10*LW1
 
-LW2 ~ ar20*LW1 + cc20*LM1
-LW3 ~ ar20*LW2 + cc20*LM2
-LW4 ~ ar20*LW3 + cc20*LM3
 LW5 ~ ar20*LW4 + cc20*LM4
+LW4 ~ ar20*LW3 + cc20*LM3
+LW3 ~ ar20*LW2 + cc20*LM2
+LW2 ~ ar20*LW1 + cc20*LM1
 '
 
 # RI-CLPModell 5 Wellen Definition constrained ####
@@ -320,12 +320,12 @@ LM4 ~~ co01*LW4
 LM4 ~~ co01*LW4
 
 #Stability & LAGGED EFFECTS
-LM2 ~ sp10*LM1 + cc10*LW1
-LM3 ~ sp10*LM2 + cc10*LW2
-LM4 ~ sp10*LM3 + cc10*LW3
 LM5 ~ sp10*LM4 + cc10*LW4
+LM4 ~ sp10*LM3 + cc10*LW3
+LM3 ~ sp10*LM2 + cc10*LW2
+LM2 ~ sp10*LM1 + cc10*LW1
 
-LW2 ~ sp20*LW1 + cc20*LM1
-LW3 ~ sp20*LW2 + cc20*LM2
+LW5 ~ sp20*LW4 + cc20*LM4
 LW4 ~ sp20*LW3 + cc20*LM3
-LW5 ~ sp20*LW4 + cc20*LM4'
+LW3 ~ sp20*LW2 + cc20*LM2
+LW2 ~ sp20*LW1 + cc20*LM1'
