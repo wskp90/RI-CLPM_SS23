@@ -146,6 +146,7 @@ DF$semdat_1 %>% select(contains(c("w"))) %>%
 
 ## CLPM Latent
 ```{r}
+tic()
 DF$int_smL.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
 broom::glance(DF$int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
 broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
@@ -156,7 +157,25 @@ broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.
 semPaths(DF$int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
          curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
 title("BTW21 Internet/Social Media")
+toc()
 ```
+
+## CLPM Latent 2 Lag
+```{r}
+tic()
+DF$int_smL.fit <- lavaan::sem(DF$clpm_L2, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("BTW21 Internet/Social Media")
+toc()
+```
+
 
 ## RI-CLPM
 ```{r}
