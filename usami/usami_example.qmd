@@ -1,0 +1,106 @@
+---
+title: "Usami GCLM adapt"
+subtitle: "Test"
+author:
+- "Satoshi Usami"
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: source
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+  rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Prepare Data
+```{r}
+source(here("script/models.R"))
+load(paste0(Sys.getenv("FAUBOX"),"/GLES/usami/36282-0001-Data.rda"))
+attach(da36282.0001)
+dat2<-subset(da36282.0001, AGE_YRS>14 & AGE_YRS<21)  # age restriction
+detach(da36282.0001); attach(dat2)
+Data<-data.frame(matrix(rep(NA,13*length(table(MASTERID))),length(table(MASTERID)),13))
+KK<- MASTERID[1]; AA<-1
+for(j in 1:nrow(dat2)){  # Creating data in subject × time format
+KK2<- MASTERID[j]
+AA<-ifelse(KK2==KK,AA,AA+1)
+Data[AA,1]<-MASTERID[j]  #ID
+Data[AA,AGE_YRS[j]-13]<-Q0680[j]  # exposure to smoking in movies
+Data[AA,AGE_YRS[j]-7]<-SMOKEINTENSITY[j]  # smoking intensity
+KK<-KK2
+}
+detach(dat2)
+colnames(Data)<-c("ID","x1","x2","x3","x4","x5","x6" ,"y1","y2","y3","y4","y5","y6")
+DF$semdata = Data
+rm(da36282.0001,dat2,Data,AA,j,KK,KK2)
+
+```
+
+
+
+### Usami 6
+```{r}
+DF$RICLPMT6.cfa.fit<-cfa(DF$RICLPMT6,data=DF$semdata, missing='fiml')
+DF$RICLPMT6.sem.fit<-sem(DF$RICLPMT6,data=DF$semdata, missing="ML", estimator = "MLR", meanstructure = "default")
+broom::glance(DF$RICLPMT6.cfa.fit)
+broom::glance(DF$RICLPMT6.sem.fit)
+summary(DF$RICLPMT6.fit, fit.measures = TRUE)
+```
+
+### Usami 5
+```{r}
+DF$RICLPMT5.fit<-sem(DF$RICLPMT5,data=DF$semdata, missing='fiml')
+broom::glance(DF$RICLPMT5.fit)
+summary(DF$RICLPMT5.fit, fit.measures = TRUE)
+```
