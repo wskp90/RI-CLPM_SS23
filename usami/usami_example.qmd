@@ -89,18 +89,43 @@ rm(da36282.0001,dat2,Data,AA,j,KK,KK2)
 
 
 
-### Usami 6
+### Usami 6 RI-CLPM
 ```{r}
-DF$RICLPMT6.cfa.fit<-cfa(DF$RICLPMT6,data=DF$semdata, missing='fiml')
-DF$RICLPMT6.sem.fit<-sem(DF$RICLPMT6,data=DF$semdata, missing="ML", estimator = "MLR", meanstructure = "default")
-broom::glance(DF$RICLPMT6.cfa.fit)
-broom::glance(DF$RICLPMT6.sem.fit)
-summary(DF$RICLPMT6.fit, fit.measures = TRUE)
+DF$RICLPMT6.fit<-sem(DF$RICLPMT6,data=DF$semdata, missing="ML", estimator = "MLR", meanstructure = "default")
+broom::glance(DF$RICLPMT6.fit)
+summary(DF$RICLPMT6.fit, fit.measures = TRUE, standardized = TRUE)
 ```
+
+### Usami 6 GCLM
+```{r}
+DF$GCLMT6.fit<-sem(DF$GCLMT6,data=DF$semdata, missing="ML", estimator = "MLR", meanstructure = "default")
+broom::glance(DF$GCLMT6.fit)
+summary(DF$GCLMT6.fit, fit.measures = TRUE)
+```
+
 
 ### Usami 5
 ```{r}
 DF$RICLPMT5.fit<-sem(DF$RICLPMT5,data=DF$semdata, missing='fiml')
 broom::glance(DF$RICLPMT5.fit)
-summary(DF$RICLPMT5.fit, fit.measures = TRUE)
+summary(DF$RICLPMT5.fit, fit.measures = TRUE, standardized = TRUE)
+```
+
+### Usami 3
+```{r}
+DF$RICLPMT3.fit<-sem(DF$RICLPMT3,data=DF$semdata, missing='fiml')
+broom::glance(DF$RICLPMT3.fit)
+summary(DF$RICLPMT3.fit, fit.measures = TRUE)
+semPaths(DF$RICLPMT3.fit, what = "std", whatLabels="std", layout="tree", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 1, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+
+```
+### Usami 3 GCLM
+```{r}
+DF$GCLMT3.fit<-sem(DF$GCLMT3,data=DF$semdata, missing="ML", estimator = "MLR", meanstructure = "default")
+broom::glance(DF$GCLMT3.fit)
+summary(DF$GCLMT3.fit, fit.measures = TRUE)
+semPaths(DF$GCLMT3.fit, what = "std", whatLabels="std", layout="tree", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 1, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+
 ```

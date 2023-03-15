@@ -2617,10 +2617,13 @@ vertical-align: -.125em;
   <li><a href="#global-settings-notes" id="toc-global-settings-notes" class="nav-link" data-scroll-target="#global-settings-notes"><span class="toc-section-number">1.1</span>  Global settings &amp; Notes</a></li>
   <li><a href="#load-packages" id="toc-load-packages" class="nav-link" data-scroll-target="#load-packages"><span class="toc-section-number">1.2</span>  Load Packages</a></li>
   <li><a href="#prepare-lists" id="toc-prepare-lists" class="nav-link" data-scroll-target="#prepare-lists"><span class="toc-section-number">1.3</span>  Prepare Lists</a></li>
-  <li><a href="#define-models" id="toc-define-models" class="nav-link" data-scroll-target="#define-models"><span class="toc-section-number">1.4</span>  Define Models</a>
+  <li><a href="#prepare-data" id="toc-prepare-data" class="nav-link" data-scroll-target="#prepare-data"><span class="toc-section-number">1.4</span>  Prepare Data</a>
   <ul class="collapse">
-  <li><a href="#usami" id="toc-usami" class="nav-link" data-scroll-target="#usami"><span class="toc-section-number">1.4.1</span>  Usami</a></li>
-  <li><a href="#tex" id="toc-tex" class="nav-link" data-scroll-target="#tex"><span class="toc-section-number">1.4.2</span>  Tex</a></li>
+  <li><a href="#usami-6-ri-clpm" id="toc-usami-6-ri-clpm" class="nav-link" data-scroll-target="#usami-6-ri-clpm"><span class="toc-section-number">1.4.1</span>  Usami 6 RI-CLPM</a></li>
+  <li><a href="#usami-6-gclm" id="toc-usami-6-gclm" class="nav-link" data-scroll-target="#usami-6-gclm"><span class="toc-section-number">1.4.2</span>  Usami 6 GCLM</a></li>
+  <li><a href="#usami-5" id="toc-usami-5" class="nav-link" data-scroll-target="#usami-5"><span class="toc-section-number">1.4.3</span>  Usami 5</a></li>
+  <li><a href="#usami-3" id="toc-usami-3" class="nav-link" data-scroll-target="#usami-3"><span class="toc-section-number">1.4.4</span>  Usami 3</a></li>
+  <li><a href="#usami-3-gclm" id="toc-usami-3-gclm" class="nav-link" data-scroll-target="#usami-3-gclm"><span class="toc-section-number">1.4.5</span>  Usami 3 GCLM</a></li>
   </ul></li>
   </ul></li>
   </ul>
@@ -2696,141 +2699,39 @@ vertical-align: -.125em;
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>DF <span class="ot">=</span> <span class="fu">list</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<div class="cell">
-<details>
-<summary>Code</summary>
-<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">paste0</span>(<span class="fu">Sys.getenv</span>(<span class="st">&quot;FAUBOX&quot;</span>),<span class="st">&quot;/GLES/usami/36282-0001-Data.rda&quot;</span>))</span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(da36282<span class="fl">.0001</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>dat2<span class="ot">&lt;-</span><span class="fu">subset</span>(da36282<span class="fl">.0001</span>, AGE_YRS<span class="sc">&gt;</span><span class="dv">14</span> <span class="sc">&amp;</span> AGE_YRS<span class="sc">&lt;</span><span class="dv">21</span>)  <span class="co"># age restriction</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(da36282<span class="fl">.0001</span>); <span class="fu">attach</span>(dat2)</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>Data<span class="ot">&lt;-</span><span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="cn">NA</span>,<span class="dv">13</span><span class="sc">*</span><span class="fu">length</span>(<span class="fu">table</span>(MASTERID))),<span class="fu">length</span>(<span class="fu">table</span>(MASTERID)),<span class="dv">13</span>))</span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>KK<span class="ot">&lt;-</span> MASTERID[<span class="dv">1</span>]; AA<span class="ot">&lt;-</span><span class="dv">1</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat2)){  <span class="co"># Creating data in subject × time format</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>KK2<span class="ot">&lt;-</span> MASTERID[j]</span>
-<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>AA<span class="ot">&lt;-</span><span class="fu">ifelse</span>(KK2<span class="sc">==</span>KK,AA,AA<span class="sc">+</span><span class="dv">1</span>)</span>
-<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>Data[AA,<span class="dv">1</span>]<span class="ot">&lt;-</span>MASTERID[j]  <span class="co">#ID</span></span>
-<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Data[AA,AGE_YRS[j]<span class="sc">-</span><span class="dv">13</span>]<span class="ot">&lt;-</span>Q0680[j]  <span class="co"># exposure to smoking in movies</span></span>
-<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>Data[AA,AGE_YRS[j]<span class="sc">-</span><span class="dv">7</span>]<span class="ot">&lt;-</span>SMOKEINTENSITY[j]  <span class="co"># smoking intensity</span></span>
-<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>KK<span class="ot">&lt;-</span>KK2</span>
-<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(dat2)</span>
-<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Data)<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;ID&quot;</span>,<span class="st">&quot;x1&quot;</span>,<span class="st">&quot;x2&quot;</span>,<span class="st">&quot;x3&quot;</span>,<span class="st">&quot;x4&quot;</span>,<span class="st">&quot;x5&quot;</span>,<span class="st">&quot;x6&quot;</span> ,<span class="st">&quot;y1&quot;</span>,<span class="st">&quot;y2&quot;</span>,<span class="st">&quot;y3&quot;</span>,<span class="st">&quot;y4&quot;</span>,<span class="st">&quot;y5&quot;</span>,<span class="st">&quot;y6&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</details>
-</div>
 </section>
-<section id="define-models" class="level2" data-number="1.4">
-<h2 data-number="1.4" class="anchored" data-anchor-id="define-models"><span class="header-section-number">1.4</span> Define Models</h2>
+<section id="prepare-data" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="prepare-data"><span class="header-section-number">1.4</span> Prepare Data</h2>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>RICLPMT6 <span class="ot">&lt;-</span> <span class="st">&#39;</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="st">x1~mux1*1; y1~muy1*1</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="st">x2~mux2*1; y2~muy2*1</span></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="st">x3~mux3*1; y3~muy3*1</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a><span class="st">x4~mux4*1; y4~muy4*1</span></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a><span class="st">x5~mux5*1; y5~muy5*1</span></span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a><span class="st">x6~mux6*1; y6~muy6*1</span></span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a><span class="st">#VARIANCES @0 OF OBSERVED SCORES</span></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="st">x1~~0*x1; y1~~0*y1;</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="st">x2~~0*x2; y2~~0*y2;</span></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a><span class="st">x3~~0*x3; y3~~0*y3;</span></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="st">x4~~0*x4; y4~~0*y4;</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="st">x5~~0*x5; y5~~0*y5;</span></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a><span class="st">x6~~0*x6; y6~~0*y6;</span></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a><span class="st">Ix~~0*FFx1;Ix~~0*FFy1; Iy~~0*FFx1;Iy~~0*FFy1;</span></span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a><span class="st">Ix=~1*x1+1*x2+1*x3+1*x4+1*x5+1*x6;</span></span>
-<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a><span class="st">Iy=~1*y1+1*y2+1*y3+1*y4+1*y5+1*y6</span></span>
-<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a><span class="st">Ix~0*1; Iy~0*1; Ix~~taux*Ix; Iy~~tauy*Iy; Ix~~tauxy*Iy</span></span>
-<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a><span class="st">FFx1~ 0*1;FFy1~0*1</span></span>
-<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a><span class="st">FFy2~ betay*FFy1+gammay*FFx1; FFx2~ betax*FFx1+gammax*FFy1</span></span>
-<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="st">FFy3~ betay*FFy2+gammay*FFx2; FFx3~ betax*FFx2+gammax*FFy2</span></span>
-<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a><span class="st">FFy4~ betay*FFy3+gammay*FFx3; FFx4~ betax*FFx3+gammax*FFy3</span></span>
-<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a><span class="st">FFy5~ betay*FFy4+gammay*FFx4; FFx5~ betax*FFx4+gammax*FFy4</span></span>
-<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="st">FFy6~ betay*FFy5+gammay*FFx5; FFx6~ betax*FFx5+gammax*FFy5</span></span>
-<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-31"><a href="#cb6-31" aria-hidden="true" tabindex="-1"></a><span class="st">FFx1~~phix*FFx1; FFy1~~phiy*FFy1; FFx1~~phixy*FFy1</span></span>
-<span id="cb6-32"><a href="#cb6-32" aria-hidden="true" tabindex="-1"></a><span class="st">FFx2~~Omegax*FFx2; FFx3~~Omegax*FFx3; FFx4~~Omegax*FFx4; FFx5~~Omegax*FFx5; FFx6~~Omegax*FFx6</span></span>
-<span id="cb6-33"><a href="#cb6-33" aria-hidden="true" tabindex="-1"></a><span class="st">FFy2~~Omegay*FFy2; FFy3~~Omegay*FFy3; FFy4~~Omegay*FFy4; FFy5~~Omegay*FFy5; FFy6~~Omegay*FFy6</span></span>
-<span id="cb6-34"><a href="#cb6-34" aria-hidden="true" tabindex="-1"></a><span class="st">FFx2~~Omegaxy*FFy2; FFx3~~Omegaxy*FFy3; FFx4~~Omegaxy*FFy4; FFx5~~Omegaxy*FFy5; FFx6~~Omegaxy*FFy6</span></span>
-<span id="cb6-35"><a href="#cb6-35" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-36"><a href="#cb6-36" aria-hidden="true" tabindex="-1"></a><span class="st">FFy1 =~ 1*y1; FFy2 =~ 1*y2; FFy3 =~ 1*y3; FFy4 =~ 1*y4; FFy5 =~ 1*y5; FFy6 =~ 1*y6</span></span>
-<span id="cb6-37"><a href="#cb6-37" aria-hidden="true" tabindex="-1"></a><span class="st">FFx1 =~ 1*x1; FFx2 =~ 1*x2; FFx3 =~ 1*x3; FFx4 =~ 1*x4; FFx5 =~ 1*x5; FFx6 =~ 1*x6</span></span>
-<span id="cb6-38"><a href="#cb6-38" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span>
-<span id="cb6-39"><a href="#cb6-39" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>riclpm6C <span class="ot">&lt;-</span></span>
-<span id="cb6-40"><a href="#cb6-40" aria-hidden="true" tabindex="-1"></a><span class="st">&#39;</span></span>
-<span id="cb6-41"><a href="#cb6-41" aria-hidden="true" tabindex="-1"></a><span class="st">#RANDOM INTERCEPTS</span></span>
-<span id="cb6-42"><a href="#cb6-42" aria-hidden="true" tabindex="-1"></a><span class="st">RIM =~ 1*m1 + 1*m2 + 1*m3 + 1*m4 + 1*m5 + 1*m6</span></span>
-<span id="cb6-43"><a href="#cb6-43" aria-hidden="true" tabindex="-1"></a><span class="st">RIW =~ 1*w1 + 1*w2 + 1*w3 + 1*w4 + 1*w5 + 1*w6</span></span>
-<span id="cb6-44"><a href="#cb6-44" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-45"><a href="#cb6-45" aria-hidden="true" tabindex="-1"></a><span class="st">#LATENT FACTORS</span></span>
-<span id="cb6-46"><a href="#cb6-46" aria-hidden="true" tabindex="-1"></a><span class="st">LM1 =~ 1*m1 #each factor loading set to 1</span></span>
-<span id="cb6-47"><a href="#cb6-47" aria-hidden="true" tabindex="-1"></a><span class="st">LM2 =~ 1*m2 </span></span>
-<span id="cb6-48"><a href="#cb6-48" aria-hidden="true" tabindex="-1"></a><span class="st">LM3 =~ 1*m3</span></span>
-<span id="cb6-49"><a href="#cb6-49" aria-hidden="true" tabindex="-1"></a><span class="st">LM4 =~ 1*m4</span></span>
-<span id="cb6-50"><a href="#cb6-50" aria-hidden="true" tabindex="-1"></a><span class="st">LM5 =~ 1*m5</span></span>
-<span id="cb6-51"><a href="#cb6-51" aria-hidden="true" tabindex="-1"></a><span class="st">LM6 =~ 1*m6</span></span>
-<span id="cb6-52"><a href="#cb6-52" aria-hidden="true" tabindex="-1"></a><span class="st">LW1 =~ 1*w1</span></span>
-<span id="cb6-53"><a href="#cb6-53" aria-hidden="true" tabindex="-1"></a><span class="st">LW2 =~ 1*w2</span></span>
-<span id="cb6-54"><a href="#cb6-54" aria-hidden="true" tabindex="-1"></a><span class="st">LW3 =~ 1*w3</span></span>
-<span id="cb6-55"><a href="#cb6-55" aria-hidden="true" tabindex="-1"></a><span class="st">LW4 =~ 1*w4</span></span>
-<span id="cb6-56"><a href="#cb6-56" aria-hidden="true" tabindex="-1"></a><span class="st">LW5 =~ 1*w5</span></span>
-<span id="cb6-57"><a href="#cb6-57" aria-hidden="true" tabindex="-1"></a><span class="st">LW6 =~ 1*w6</span></span>
-<span id="cb6-58"><a href="#cb6-58" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-59"><a href="#cb6-59" aria-hidden="true" tabindex="-1"></a><span class="st">#VARIANCES @0 OF OBSERVED SCORES</span></span>
-<span id="cb6-60"><a href="#cb6-60" aria-hidden="true" tabindex="-1"></a><span class="st">m1 ~~ 0*m1</span></span>
-<span id="cb6-61"><a href="#cb6-61" aria-hidden="true" tabindex="-1"></a><span class="st">m2 ~~ 0*m2</span></span>
-<span id="cb6-62"><a href="#cb6-62" aria-hidden="true" tabindex="-1"></a><span class="st">m3 ~~ 0*m3</span></span>
-<span id="cb6-63"><a href="#cb6-63" aria-hidden="true" tabindex="-1"></a><span class="st">m4 ~~ 0*m4</span></span>
-<span id="cb6-64"><a href="#cb6-64" aria-hidden="true" tabindex="-1"></a><span class="st">m5 ~~ 0*m5</span></span>
-<span id="cb6-65"><a href="#cb6-65" aria-hidden="true" tabindex="-1"></a><span class="st">m6 ~~ 0*m6</span></span>
-<span id="cb6-66"><a href="#cb6-66" aria-hidden="true" tabindex="-1"></a><span class="st">w1 ~~ 0*w1</span></span>
-<span id="cb6-67"><a href="#cb6-67" aria-hidden="true" tabindex="-1"></a><span class="st">w2 ~~ 0*w2</span></span>
-<span id="cb6-68"><a href="#cb6-68" aria-hidden="true" tabindex="-1"></a><span class="st">w3 ~~ 0*w3</span></span>
-<span id="cb6-69"><a href="#cb6-69" aria-hidden="true" tabindex="-1"></a><span class="st">w4 ~~ 0*w4</span></span>
-<span id="cb6-70"><a href="#cb6-70" aria-hidden="true" tabindex="-1"></a><span class="st">w5 ~~ 0*w5</span></span>
-<span id="cb6-71"><a href="#cb6-71" aria-hidden="true" tabindex="-1"></a><span class="st">w6 ~~ 0*w6</span></span>
-<span id="cb6-72"><a href="#cb6-72" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-73"><a href="#cb6-73" aria-hidden="true" tabindex="-1"></a><span class="st">#LATENT FACTORS COVARIANCES @0</span></span>
-<span id="cb6-74"><a href="#cb6-74" aria-hidden="true" tabindex="-1"></a><span class="st">RIM ~~ 0*LM1</span></span>
-<span id="cb6-75"><a href="#cb6-75" aria-hidden="true" tabindex="-1"></a><span class="st">RIM ~~ 0*LW1</span></span>
-<span id="cb6-76"><a href="#cb6-76" aria-hidden="true" tabindex="-1"></a><span class="st">RIW ~~ 0*LM1</span></span>
-<span id="cb6-77"><a href="#cb6-77" aria-hidden="true" tabindex="-1"></a><span class="st">RIW ~~ 0*LW1</span></span>
-<span id="cb6-78"><a href="#cb6-78" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-79"><a href="#cb6-79" aria-hidden="true" tabindex="-1"></a><span class="st">#CORRELATIONS</span></span>
-<span id="cb6-80"><a href="#cb6-80" aria-hidden="true" tabindex="-1"></a><span class="st">RIM ~~ co00*RIW</span></span>
-<span id="cb6-81"><a href="#cb6-81" aria-hidden="true" tabindex="-1"></a><span class="st">LM6 ~~ co02*LW6</span></span>
-<span id="cb6-82"><a href="#cb6-82" aria-hidden="true" tabindex="-1"></a><span class="st">LM5 ~~ co02*LW5</span></span>
-<span id="cb6-83"><a href="#cb6-83" aria-hidden="true" tabindex="-1"></a><span class="st">LM4 ~~ co02*LW4</span></span>
-<span id="cb6-84"><a href="#cb6-84" aria-hidden="true" tabindex="-1"></a><span class="st">LM3 ~~ co02*LW3</span></span>
-<span id="cb6-85"><a href="#cb6-85" aria-hidden="true" tabindex="-1"></a><span class="st">LM2 ~~ co02*LW2</span></span>
-<span id="cb6-86"><a href="#cb6-86" aria-hidden="true" tabindex="-1"></a><span class="st">LM1 ~~ co01*LW1</span></span>
-<span id="cb6-87"><a href="#cb6-87" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-88"><a href="#cb6-88" aria-hidden="true" tabindex="-1"></a><span class="st">#Stability &amp; LAGGED EFFECTS</span></span>
-<span id="cb6-89"><a href="#cb6-89" aria-hidden="true" tabindex="-1"></a><span class="st">LM6 ~ sp10*LM5 + cl10*LW5</span></span>
-<span id="cb6-90"><a href="#cb6-90" aria-hidden="true" tabindex="-1"></a><span class="st">LM5 ~ sp10*LM4 + cl10*LW4</span></span>
-<span id="cb6-91"><a href="#cb6-91" aria-hidden="true" tabindex="-1"></a><span class="st">LM4 ~ sp10*LM3 + cl10*LW3</span></span>
-<span id="cb6-92"><a href="#cb6-92" aria-hidden="true" tabindex="-1"></a><span class="st">LM3 ~ sp10*LM2 + cl10*LW2</span></span>
-<span id="cb6-93"><a href="#cb6-93" aria-hidden="true" tabindex="-1"></a><span class="st">LM2 ~ sp10*LM1 + cl10*LW1</span></span>
-<span id="cb6-94"><a href="#cb6-94" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-95"><a href="#cb6-95" aria-hidden="true" tabindex="-1"></a><span class="st">LW6 ~ sp20*LW5 + cl20*LM5</span></span>
-<span id="cb6-96"><a href="#cb6-96" aria-hidden="true" tabindex="-1"></a><span class="st">LW5 ~ sp20*LW4 + cl20*LM4</span></span>
-<span id="cb6-97"><a href="#cb6-97" aria-hidden="true" tabindex="-1"></a><span class="st">LW4 ~ sp20*LW3 + cl20*LM3</span></span>
-<span id="cb6-98"><a href="#cb6-98" aria-hidden="true" tabindex="-1"></a><span class="st">LW3 ~ sp20*LW2 + cl20*LM2</span></span>
-<span id="cb6-99"><a href="#cb6-99" aria-hidden="true" tabindex="-1"></a><span class="st">LW2 ~ sp20*LW1 + cl20*LM1&#39;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">source</span>(<span class="fu">here</span>(<span class="st">&quot;script/models.R&quot;</span>))</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">load</span>(<span class="fu">paste0</span>(<span class="fu">Sys.getenv</span>(<span class="st">&quot;FAUBOX&quot;</span>),<span class="st">&quot;/GLES/usami/36282-0001-Data.rda&quot;</span>))</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="fu">attach</span>(da36282<span class="fl">.0001</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>dat2<span class="ot">&lt;-</span><span class="fu">subset</span>(da36282<span class="fl">.0001</span>, AGE_YRS<span class="sc">&gt;</span><span class="dv">14</span> <span class="sc">&amp;</span> AGE_YRS<span class="sc">&lt;</span><span class="dv">21</span>)  <span class="co"># age restriction</span></span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(da36282<span class="fl">.0001</span>); <span class="fu">attach</span>(dat2)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>Data<span class="ot">&lt;-</span><span class="fu">data.frame</span>(<span class="fu">matrix</span>(<span class="fu">rep</span>(<span class="cn">NA</span>,<span class="dv">13</span><span class="sc">*</span><span class="fu">length</span>(<span class="fu">table</span>(MASTERID))),<span class="fu">length</span>(<span class="fu">table</span>(MASTERID)),<span class="dv">13</span>))</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>KK<span class="ot">&lt;-</span> MASTERID[<span class="dv">1</span>]; AA<span class="ot">&lt;-</span><span class="dv">1</span></span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span>(j <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="fu">nrow</span>(dat2)){  <span class="co"># Creating data in subject × time format</span></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>KK2<span class="ot">&lt;-</span> MASTERID[j]</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>AA<span class="ot">&lt;-</span><span class="fu">ifelse</span>(KK2<span class="sc">==</span>KK,AA,AA<span class="sc">+</span><span class="dv">1</span>)</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>Data[AA,<span class="dv">1</span>]<span class="ot">&lt;-</span>MASTERID[j]  <span class="co">#ID</span></span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>Data[AA,AGE_YRS[j]<span class="sc">-</span><span class="dv">13</span>]<span class="ot">&lt;-</span>Q0680[j]  <span class="co"># exposure to smoking in movies</span></span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>Data[AA,AGE_YRS[j]<span class="sc">-</span><span class="dv">7</span>]<span class="ot">&lt;-</span>SMOKEINTENSITY[j]  <span class="co"># smoking intensity</span></span>
+<span id="cb5-14"><a href="#cb5-14" aria-hidden="true" tabindex="-1"></a>KK<span class="ot">&lt;-</span>KK2</span>
+<span id="cb5-15"><a href="#cb5-15" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb5-16"><a href="#cb5-16" aria-hidden="true" tabindex="-1"></a><span class="fu">detach</span>(dat2)</span>
+<span id="cb5-17"><a href="#cb5-17" aria-hidden="true" tabindex="-1"></a><span class="fu">colnames</span>(Data)<span class="ot">&lt;-</span><span class="fu">c</span>(<span class="st">&quot;ID&quot;</span>,<span class="st">&quot;x1&quot;</span>,<span class="st">&quot;x2&quot;</span>,<span class="st">&quot;x3&quot;</span>,<span class="st">&quot;x4&quot;</span>,<span class="st">&quot;x5&quot;</span>,<span class="st">&quot;x6&quot;</span> ,<span class="st">&quot;y1&quot;</span>,<span class="st">&quot;y2&quot;</span>,<span class="st">&quot;y3&quot;</span>,<span class="st">&quot;y4&quot;</span>,<span class="st">&quot;y5&quot;</span>,<span class="st">&quot;y6&quot;</span>)</span>
+<span id="cb5-18"><a href="#cb5-18" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>semdata <span class="ot">=</span> Data</span>
+<span id="cb5-19"><a href="#cb5-19" aria-hidden="true" tabindex="-1"></a><span class="fu">rm</span>(da36282<span class="fl">.0001</span>,dat2,Data,AA,j,KK,KK2)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 </div>
-<section id="usami" class="level3" data-number="1.4.1">
-<h3 data-number="1.4.1" class="anchored" data-anchor-id="usami"><span class="header-section-number">1.4.1</span> Usami</h3>
+<section id="usami-6-ri-clpm" class="level3" data-number="1.4.1">
+<h3 data-number="1.4.1" class="anchored" data-anchor-id="usami-6-ri-clpm"><span class="header-section-number">1.4.1</span> Usami 6 RI-CLPM</h3>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>RICLPMT6.fit<span class="ot">&lt;-</span><span class="fu">cfa</span>(DF<span class="sc">$</span>RICLPMT6,<span class="at">data=</span>Data, <span class="at">missing=</span><span class="st">&#39;fiml&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>RICLPMT6.fit<span class="ot">&lt;-</span><span class="fu">sem</span>(DF<span class="sc">$</span>RICLPMT6,<span class="at">data=</span>DF<span class="sc">$</span>semdata, <span class="at">missing=</span><span class="st">&quot;ML&quot;</span>, <span class="at">estimator =</span> <span class="st">&quot;MLR&quot;</span>, <span class="at">meanstructure =</span> <span class="st">&quot;default&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING: some cases are empty and will be ignored:
@@ -2843,7 +2744,20 @@ vertical-align: -.125em;
 </div>
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>RICLPMT6.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>broom<span class="sc">::</span><span class="fu">glance</span>(DF<span class="sc">$</span>RICLPMT6.fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 17
+   agfi    AIC    BIC   cfi chisq  npar  rmsea rmsea.conf…¹   srmr   tli conve…²
+  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;  
+1    NA 72147. 72309. 0.958  682.    25 0.0451       0.0482 0.0635 0.958 TRUE   
+# … with 6 more variables: estimator &lt;chr&gt;, ngroups &lt;int&gt;,
+#   missing_method &lt;chr&gt;, nobs &lt;int&gt;, norig &lt;int&gt;, nexcluded &lt;int&gt;, and
+#   abbreviated variable names ¹​rmsea.conf.high, ²​converged</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>RICLPMT6.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>, <span class="at">standardized =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
 <pre><code>lavaan 0.6.15 ended normally after 43 iterations
@@ -2858,74 +2772,331 @@ vertical-align: -.125em;
   Number of missing patterns                       155            
 
 Model Test User Model:
-                                                      
-  Test statistic                               682.412
-  Degrees of freedom                                65
-  P-value (Chi-square)                           0.000
+                                              Standard      Scaled
+  Test Statistic                               682.412     424.668
+  Degrees of freedom                                65          65
+  P-value (Chi-square)                           0.000       0.000
+  Scaling correction factor                                  1.607
+    Yuan-Bentler correction (Mplus variant)                       
 
 Model Test Baseline Model:
 
-  Test statistic                             14857.111
-  Degrees of freedom                                66
-  P-value                                        0.000
+  Test statistic                             14857.111    8798.043
+  Degrees of freedom                                66          66
+  P-value                                        0.000       0.000
+  Scaling correction factor                                  1.689
 
 User Model versus Baseline Model:
 
-  Comparative Fit Index (CFI)                    0.958
-  Tucker-Lewis Index (TLI)                       0.958
-                                                      
-  Robust Comparative Fit Index (CFI)             0.926
-  Robust Tucker-Lewis Index (TLI)                0.924
+  Comparative Fit Index (CFI)                    0.958       0.959
+  Tucker-Lewis Index (TLI)                       0.958       0.958
+                                                                  
+  Robust Comparative Fit Index (CFI)                         0.932
+  Robust Tucker-Lewis Index (TLI)                            0.931
 
 Loglikelihood and Information Criteria:
 
-  Loglikelihood user model (H0)             -36048.671
-  Loglikelihood unrestricted model (H1)     -35707.465
-                                                      
-  Akaike (AIC)                               72147.342
-  Bayesian (BIC)                             72308.565
-  Sample-size adjusted Bayesian (SABIC)      72229.124
+  Loglikelihood user model (H0)             -36048.671  -36048.671
+  Scaling correction factor                                  0.781
+      for the MLR correction                                      
+  Loglikelihood unrestricted model (H1)     -35707.465  -35707.465
+  Scaling correction factor                                  1.639
+      for the MLR correction                                      
+                                                                  
+  Akaike (AIC)                               72147.342   72147.342
+  Bayesian (BIC)                             72308.565   72308.565
+  Sample-size adjusted Bayesian (SABIC)      72229.124   72229.124
 
 Root Mean Square Error of Approximation:
 
-  RMSEA                                          0.045
-  90 Percent confidence interval - lower         0.042
-  90 Percent confidence interval - upper         0.048
-  P-value H_0: RMSEA &lt;= 0.050                    0.996
-  P-value H_0: RMSEA &gt;= 0.080                    0.000
-                                                      
-  Robust RMSEA                                   0.086
-  90 Percent confidence interval - lower         0.080
-  90 Percent confidence interval - upper         0.093
-  P-value H_0: Robust RMSEA &lt;= 0.050             0.000
-  P-value H_0: Robust RMSEA &gt;= 0.080             0.952
+  RMSEA                                          0.045       0.034
+  90 Percent confidence interval - lower         0.042       0.032
+  90 Percent confidence interval - upper         0.048       0.037
+  P-value H_0: RMSEA &lt;= 0.050                    0.996       1.000
+  P-value H_0: RMSEA &gt;= 0.080                    0.000       0.000
+                                                                  
+  Robust RMSEA                                               0.082
+  90 Percent confidence interval - lower                     0.073
+  90 Percent confidence interval - upper                     0.091
+  P-value H_0: Robust RMSEA &lt;= 0.050                         0.000
+  P-value H_0: Robust RMSEA &gt;= 0.080                         0.656
 
 Standardized Root Mean Square Residual:
 
-  SRMR                                           0.064
+  SRMR                                           0.064       0.064
 
 Parameter Estimates:
 
-  Standard errors                             Standard
-  Information                                 Observed
+  Standard errors                             Sandwich
+  Information bread                           Observed
+  Observed information based on                Hessian
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFy1 =~                                                               
+    y1                1.000                               0.271    0.324
+  FFy2 =~                                                               
+    y2                1.000                               0.869    0.739
+  FFy3 =~                                                               
+    y3                1.000                               1.023    0.791
+  FFy4 =~                                                               
+    y4                1.000                               1.083    0.807
+  FFy5 =~                                                               
+    y5                1.000                               1.107    0.813
+  FFy6 =~                                                               
+    y6                1.000                               1.117    0.816
+  FFx1 =~                                                               
+    x1                1.000                               0.491    0.792
+  FFx2 =~                                                               
+    x2                1.000                               0.437    0.756
+  FFx3 =~                                                               
+    x3                1.000                               0.435    0.755
+  FFx4 =~                                                               
+    x4                1.000                               0.435    0.755
+  FFx5 =~                                                               
+    x5                1.000                               0.435    0.755
+  FFx6 =~                                                               
+    x6                1.000                               0.435    0.755
+  Ix =~                                                                 
+    x1                1.000                               0.378    0.610
+    x2                1.000                               0.378    0.655
+    x3                1.000                               0.378    0.656
+    x4                1.000                               0.378    0.656
+    x5                1.000                               0.378    0.656
+    x6                1.000                               0.378    0.656
+  Iy =~                                                                 
+    y1                1.000                               0.792    0.946
+    y2                1.000                               0.792    0.674
+    y3                1.000                               0.792    0.612
+    y4                1.000                               0.792    0.590
+    y5                1.000                               0.792    0.582
+    y6                1.000                               0.792    0.578
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFy2 ~                                                                
+    FFy1    (bety)    0.654    0.029   22.282    0.000    0.204    0.204
+    FFx1    (gmmy)   -0.001    0.026   -0.045    0.964   -0.001   -0.001
+  FFx2 ~                                                                
+    FFx1    (betx)    0.168    0.014   11.910    0.000    0.189    0.189
+    FFy1    (gmmx)    0.003    0.008    0.386    0.700    0.002    0.002
+  FFy3 ~                                                                
+    FFy2    (bety)    0.654    0.029   22.282    0.000    0.555    0.555
+    FFx2    (gmmy)   -0.001    0.026   -0.045    0.964   -0.001   -0.001
+  FFx3 ~                                                                
+    FFx2    (betx)    0.168    0.014   11.910    0.000    0.169    0.169
+    FFy2    (gmmx)    0.003    0.008    0.386    0.700    0.006    0.006
+  FFy4 ~                                                                
+    FFy3    (bety)    0.654    0.029   22.282    0.000    0.618    0.618
+    FFx3    (gmmy)   -0.001    0.026   -0.045    0.964   -0.000   -0.000
+  FFx4 ~                                                                
+    FFx3    (betx)    0.168    0.014   11.910    0.000    0.168    0.168
+    FFy3    (gmmx)    0.003    0.008    0.386    0.700    0.007    0.007
+  FFy5 ~                                                                
+    FFy4    (bety)    0.654    0.029   22.282    0.000    0.640    0.640
+    FFx4    (gmmy)   -0.001    0.026   -0.045    0.964   -0.000   -0.000
+  FFx5 ~                                                                
+    FFx4    (betx)    0.168    0.014   11.910    0.000    0.168    0.168
+    FFy4    (gmmx)    0.003    0.008    0.386    0.700    0.007    0.007
+  FFy6 ~                                                                
+    FFy5    (bety)    0.654    0.029   22.282    0.000    0.648    0.648
+    FFx5    (gmmy)   -0.001    0.026   -0.045    0.964   -0.000   -0.000
+  FFx6 ~                                                                
+    FFx5    (betx)    0.168    0.014   11.910    0.000    0.168    0.168
+    FFy5    (gmmx)    0.003    0.008    0.386    0.700    0.007    0.007
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFx1 ~~                                                               
+    Ix                0.000                               0.000    0.000
+  FFy1 ~~                                                               
+    Ix                0.000                               0.000    0.000
+  FFx1 ~~                                                               
+    Iy                0.000                               0.000    0.000
+  FFy1 ~~                                                               
+    Iy                0.000                               0.000    0.000
+  Ix ~~                                                                 
+    Iy      (taxy)   -0.051    0.010   -5.403    0.000   -0.171   -0.171
+  FFy1 ~~                                                               
+    FFx1    (phxy)    0.009    0.015    0.637    0.524    0.069    0.069
+ .FFy2 ~~                                                               
+   .FFx2    (Omgx)   -0.008    0.005   -1.731    0.083   -0.022   -0.022
+ .FFy3 ~~                                                               
+   .FFx3    (Omgx)   -0.008    0.005   -1.731    0.083   -0.022   -0.022
+ .FFy4 ~~                                                               
+   .FFx4    (Omgx)   -0.008    0.005   -1.731    0.083   -0.022   -0.022
+ .FFy5 ~~                                                               
+   .FFx5    (Omgx)   -0.008    0.005   -1.731    0.083   -0.022   -0.022
+ .FFy6 ~~                                                               
+   .FFx6    (Omgx)   -0.008    0.005   -1.731    0.083   -0.022   -0.022
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1      (mux1)    1.862    0.010  189.643    0.000    1.862    3.002
+   .y1      (muy1)    1.315    0.027   48.096    0.000    1.315    1.571
+   .x2      (mux2)    1.881    0.009  208.269    0.000    1.881    3.253
+   .y2      (muy2)    1.438    0.023   63.032    0.000    1.438    1.223
+   .x3      (mux3)    1.927    0.009  221.319    0.000    1.927    3.340
+   .y3      (muy3)    1.572    0.022   72.204    0.000    1.572    1.215
+   .x4      (mux4)    1.939    0.009  218.269    0.000    1.939    3.360
+   .y4      (muy4)    1.786    0.023   78.243    0.000    1.786    1.332
+   .x5      (mux5)    1.961    0.009  212.446    0.000    1.961    3.398
+   .y5      (muy5)    1.851    0.023   80.956    0.000    1.851    1.360
+   .x6      (mux6)    1.974    0.010  197.755    0.000    1.974    3.422
+   .y6      (muy6)    1.863    0.023   80.117    0.000    1.863    1.361
+    Ix                0.000                               0.000    0.000
+    Iy                0.000                               0.000    0.000
+    FFx1              0.000                               0.000    0.000
+    FFy1              0.000                               0.000    0.000
+   .FFy2              0.000                               0.000    0.000
+   .FFy3              0.000                               0.000    0.000
+   .FFy4              0.000                               0.000    0.000
+   .FFy5              0.000                               0.000    0.000
+   .FFy6              0.000                               0.000    0.000
+   .FFx2              0.000                               0.000    0.000
+   .FFx3              0.000                               0.000    0.000
+   .FFx4              0.000                               0.000    0.000
+   .FFx5              0.000                               0.000    0.000
+   .FFx6              0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.000                               0.000    0.000
+   .y1                0.000                               0.000    0.000
+   .x2                0.000                               0.000    0.000
+   .y2                0.000                               0.000    0.000
+   .x3                0.000                               0.000    0.000
+   .y3                0.000                               0.000    0.000
+   .x4                0.000                               0.000    0.000
+   .y4                0.000                               0.000    0.000
+   .x5                0.000                               0.000    0.000
+   .y5                0.000                               0.000    0.000
+   .x6                0.000                               0.000    0.000
+   .y6                0.000                               0.000    0.000
+    Ix      (taux)    0.143    0.005   29.476    0.000    1.000    1.000
+    Iy      (tauy)    0.627    0.065    9.602    0.000    1.000    1.000
+    FFx1    (phix)    0.241    0.008   31.070    0.000    1.000    1.000
+    FFy1    (phiy)    0.074    0.053    1.387    0.165    1.000    1.000
+   .FFx2    (Omgx)    0.184    0.004   52.136    0.000    0.964    0.964
+   .FFx3    (Omgx)    0.184    0.004   52.136    0.000    0.971    0.971
+   .FFx4    (Omgx)    0.184    0.004   52.136    0.000    0.972    0.972
+   .FFx5    (Omgx)    0.184    0.004   52.136    0.000    0.972    0.972
+   .FFx6    (Omgx)    0.184    0.004   52.136    0.000    0.972    0.972
+   .FFy2    (Omgy)    0.724    0.023   31.259    0.000    0.958    0.958
+   .FFy3    (Omgy)    0.724    0.023   31.259    0.000    0.691    0.691
+   .FFy4    (Omgy)    0.724    0.023   31.259    0.000    0.618    0.618
+   .FFy5    (Omgy)    0.724    0.023   31.259    0.000    0.591    0.591
+   .FFy6    (Omgy)    0.724    0.023   31.259    0.000    0.580    0.580</code></pre>
+</div>
+</div>
+</section>
+<section id="usami-6-gclm" class="level3" data-number="1.4.2">
+<h3 data-number="1.4.2" class="anchored" data-anchor-id="usami-6-gclm"><span class="header-section-number">1.4.2</span> Usami 6 GCLM</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>GCLMT6.fit<span class="ot">&lt;-</span><span class="fu">sem</span>(DF<span class="sc">$</span>GCLMT6,<span class="at">data=</span>DF<span class="sc">$</span>semdata, <span class="at">missing=</span><span class="st">&quot;ML&quot;</span>, <span class="at">estimator =</span> <span class="st">&quot;MLR&quot;</span>, <span class="at">meanstructure =</span> <span class="st">&quot;default&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING: some cases are empty and will be ignored:
+  4671 4672 4673 4674 4675 4676 4677 4678 4679 4680 4681 4682 4683 4684 4685 4686 4687 4688 4689 4690 4691 4692 4693 4694 4695 4696 4697 4698 4699 4700 4701 4702 4703 4704 4705 4706 4707 4708 4709 4710 4711 4712 4713 4714 4715 4716 4717 4718 4719 4720 4721 4722 4723 4724 4725 4726 4727 4728 4729 4730 4731 4732 4733 4734 4735 4736 4737 4738 4739 4740 4741 4742 4743 4744 4745 4746 4747 4748 4749 4750 4751 4752 4753 4754 4755 4756 4757 4758 4759 4760 4761 4762 4763 4764 4765 4766 4767 4768 4769 4770 4771 4772 4773 4774 4775 4776 4777 4778 4779 4780 4781 4782 4783 4784 4785 4786 4787 4788 4789 4790 4791 4792 4793 4794 4795 4796 4797 4798 4799 4800 4801 4802 4803 4804 4805 4806 4807 4808 4809 4810 4811 4812 4813 4814 4815 4816 4817 4818 4819 4820 4821 4822 4823 4824</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING:
+    due to missing values, some pairwise combinations have 0%
+    coverage; use lavInspect(fit, &quot;coverage&quot;) to investigate.</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>broom<span class="sc">::</span><span class="fu">glance</span>(DF<span class="sc">$</span>GCLMT6.fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 17
+   agfi    AIC    BIC   cfi chisq  npar  rmsea rmsea.conf…¹   srmr   tli conve…²
+  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;  
+1    NA 72066. 72227. 0.964  601.    25 0.0420       0.0451 0.0669 0.963 TRUE   
+# … with 6 more variables: estimator &lt;chr&gt;, ngroups &lt;int&gt;,
+#   missing_method &lt;chr&gt;, nobs &lt;int&gt;, norig &lt;int&gt;, nexcluded &lt;int&gt;, and
+#   abbreviated variable names ¹​rmsea.conf.high, ²​converged</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>GCLMT6.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.15 ended normally after 41 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        53
+  Number of equality constraints                    28
+
+                                                  Used       Total
+  Number of observations                          4670        4824
+  Number of missing patterns                       155            
+
+Model Test User Model:
+                                              Standard      Scaled
+  Test Statistic                               600.650     369.849
+  Degrees of freedom                                65          65
+  P-value (Chi-square)                           0.000       0.000
+  Scaling correction factor                                  1.624
+    Yuan-Bentler correction (Mplus variant)                       
+
+Model Test Baseline Model:
+
+  Test statistic                             14857.111    8798.043
+  Degrees of freedom                                66          66
+  P-value                                        0.000       0.000
+  Scaling correction factor                                  1.689
+
+User Model versus Baseline Model:
+
+  Comparative Fit Index (CFI)                    0.964       0.965
+  Tucker-Lewis Index (TLI)                       0.963       0.965
+                                                                  
+  Robust Comparative Fit Index (CFI)                         0.940
+  Robust Tucker-Lewis Index (TLI)                            0.939
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)             -36007.790  -36007.790
+  Scaling correction factor                                  0.760
+      for the MLR correction                                      
+  Loglikelihood unrestricted model (H1)     -35707.465  -35707.465
+  Scaling correction factor                                  1.639
+      for the MLR correction                                      
+                                                                  
+  Akaike (AIC)                               72065.579   72065.579
+  Bayesian (BIC)                             72226.802   72226.802
+  Sample-size adjusted Bayesian (SABIC)      72147.362   72147.362
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.042       0.032
+  90 Percent confidence interval - lower         0.039       0.029
+  90 Percent confidence interval - upper         0.045       0.034
+  P-value H_0: RMSEA &lt;= 0.050                    1.000       1.000
+  P-value H_0: RMSEA &gt;= 0.080                    0.000       0.000
+                                                                  
+  Robust RMSEA                                               0.077
+  90 Percent confidence interval - lower                     0.068
+  90 Percent confidence interval - upper                     0.086
+  P-value H_0: Robust RMSEA &lt;= 0.050                         0.000
+  P-value H_0: Robust RMSEA &gt;= 0.080                         0.311
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.067       0.067
+
+Parameter Estimates:
+
+  Standard errors                             Sandwich
+  Information bread                           Observed
   Observed information based on                Hessian
 
 Latent Variables:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-  Ix =~                                               
-    x1                1.000                           
-    x2                1.000                           
-    x3                1.000                           
-    x4                1.000                           
-    x5                1.000                           
-    x6                1.000                           
-  Iy =~                                               
-    y1                1.000                           
-    y2                1.000                           
-    y3                1.000                           
-    y4                1.000                           
-    y5                1.000                           
-    y6                1.000                           
   FFy1 =~                                             
     y1                1.000                           
   FFy2 =~                                             
@@ -2950,81 +3121,107 @@ Latent Variables:
     x5                1.000                           
   FFx6 =~                                             
     x6                1.000                           
+  By =~                                               
+    FFy1              1.000                           
+    FFy2              1.000                           
+    FFy3              1.000                           
+    FFy4              1.000                           
+    FFy5              1.000                           
+    FFy6              1.000                           
+  Bx =~                                               
+    FFx1              1.000                           
+    FFx2              1.000                           
+    FFx3              1.000                           
+    FFx4              1.000                           
+    FFx5              1.000                           
+    FFx6              1.000                           
 
 Regressions:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
   FFy2 ~                                              
-    FFy1    (bety)    0.654    0.014   46.458    0.000
-    FFx1    (gmmy)   -0.001    0.024   -0.050    0.960
+    FFy1    (bety)    0.458    0.031   15.016    0.000
+    FFx1    (gmmy)    0.017    0.022    0.761    0.446
   FFx2 ~                                              
-    FFx1    (betx)    0.168    0.011   15.539    0.000
-    FFy1    (gmmx)    0.003    0.007    0.420    0.675
+    FFx1    (betx)    0.146    0.013   11.185    0.000
+    FFy1    (gmmx)    0.012    0.007    1.755    0.079
   FFy3 ~                                              
-    FFy2    (bety)    0.654    0.014   46.458    0.000
-    FFx2    (gmmy)   -0.001    0.024   -0.050    0.960
+    FFy2    (bety)    0.458    0.031   15.016    0.000
+    FFx2    (gmmy)    0.017    0.022    0.761    0.446
   FFx3 ~                                              
-    FFx2    (betx)    0.168    0.011   15.539    0.000
-    FFy2    (gmmx)    0.003    0.007    0.420    0.675
+    FFx2    (betx)    0.146    0.013   11.185    0.000
+    FFy2    (gmmx)    0.012    0.007    1.755    0.079
   FFy4 ~                                              
-    FFy3    (bety)    0.654    0.014   46.458    0.000
-    FFx3    (gmmy)   -0.001    0.024   -0.050    0.960
+    FFy3    (bety)    0.458    0.031   15.016    0.000
+    FFx3    (gmmy)    0.017    0.022    0.761    0.446
   FFx4 ~                                              
-    FFx3    (betx)    0.168    0.011   15.539    0.000
-    FFy3    (gmmx)    0.003    0.007    0.420    0.675
+    FFx3    (betx)    0.146    0.013   11.185    0.000
+    FFy3    (gmmx)    0.012    0.007    1.755    0.079
   FFy5 ~                                              
-    FFy4    (bety)    0.654    0.014   46.458    0.000
-    FFx4    (gmmy)   -0.001    0.024   -0.050    0.960
+    FFy4    (bety)    0.458    0.031   15.016    0.000
+    FFx4    (gmmy)    0.017    0.022    0.761    0.446
   FFx5 ~                                              
-    FFx4    (betx)    0.168    0.011   15.539    0.000
-    FFy4    (gmmx)    0.003    0.007    0.420    0.675
+    FFx4    (betx)    0.146    0.013   11.185    0.000
+    FFy4    (gmmx)    0.012    0.007    1.755    0.079
   FFy6 ~                                              
-    FFy5    (bety)    0.654    0.014   46.458    0.000
-    FFx5    (gmmy)   -0.001    0.024   -0.050    0.960
+    FFy5    (bety)    0.458    0.031   15.016    0.000
+    FFx5    (gmmy)    0.017    0.022    0.761    0.446
   FFx6 ~                                              
-    FFx5    (betx)    0.168    0.011   15.539    0.000
-    FFy5    (gmmx)    0.003    0.007    0.420    0.675
+    FFx5    (betx)    0.146    0.013   11.185    0.000
+    FFy5    (gmmx)    0.012    0.007    1.755    0.079
 
 Covariances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-  Ix ~~                                               
-    FFx1              0.000                           
-    FFy1              0.000                           
-  Iy ~~                                               
-    FFx1              0.000                           
-    FFy1              0.000                           
-  Ix ~~                                               
-    Iy      (taxy)   -0.051    0.009   -5.950    0.000
-  FFy1 ~~                                             
-    FFx1    (phxy)    0.009    0.014    0.677    0.499
+ .FFx1 ~~                                             
+    Bx                0.000                           
+    By                0.000                           
+ .FFy1 ~~                                             
+    Bx                0.000                           
+    By                0.000                           
+  By ~~                                               
+    Bx      (phBB)   -0.036    0.008   -4.422    0.000
+ .FFy1 ~~                                             
+   .FFx1    (ph11)    0.013    0.016    0.819    0.413
+ .y1 ~~                                               
+   .x1                0.000                           
+ .y2 ~~                                               
+   .x2                0.000                           
+ .y3 ~~                                               
+   .x3                0.000                           
+ .y4 ~~                                               
+   .x4                0.000                           
+ .y5 ~~                                               
+   .x5                0.000                           
+ .y6 ~~                                               
+   .x6                0.000                           
  .FFy2 ~~                                             
-   .FFx2    (Omgx)   -0.008    0.004   -1.874    0.061
+   .FFx2    (Omgx)   -0.007    0.004   -1.572    0.116
  .FFy3 ~~                                             
-   .FFx3    (Omgx)   -0.008    0.004   -1.874    0.061
+   .FFx3    (Omgx)   -0.007    0.004   -1.572    0.116
  .FFy4 ~~                                             
-   .FFx4    (Omgx)   -0.008    0.004   -1.874    0.061
+   .FFx4    (Omgx)   -0.007    0.004   -1.572    0.116
  .FFy5 ~~                                             
-   .FFx5    (Omgx)   -0.008    0.004   -1.874    0.061
+   .FFx5    (Omgx)   -0.007    0.004   -1.572    0.116
  .FFy6 ~~                                             
-   .FFx6    (Omgx)   -0.008    0.004   -1.874    0.061
+   .FFx6    (Omgx)   -0.007    0.004   -1.572    0.116
 
 Intercepts:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-   .x1      (mux1)    1.862    0.010  189.542    0.000
-   .y1      (muy1)    1.315    0.023   58.248    0.000
-   .x2      (mux2)    1.881    0.009  218.492    0.000
-   .y2      (muy2)    1.438    0.025   57.764    0.000
-   .x3      (mux3)    1.927    0.009  221.148    0.000
-   .y3      (muy3)    1.572    0.024   66.184    0.000
-   .x4      (mux4)    1.939    0.009  218.414    0.000
-   .y4      (muy4)    1.786    0.022   79.459    0.000
-   .x5      (mux5)    1.961    0.010  206.363    0.000
-   .y5      (muy5)    1.851    0.022   84.813    0.000
-   .x6      (mux6)    1.974    0.010  189.032    0.000
-   .y6      (muy6)    1.863    0.023   82.442    0.000
-    Ix                0.000                           
-    Iy                0.000                           
-    FFx1              0.000                           
-    FFy1              0.000                           
+   .x1      (mux1)    1.863    0.010  189.789    0.000
+   .y1      (muy1)    1.304    0.025   52.097    0.000
+   .x2      (mux2)    1.881    0.009  208.260    0.000
+   .y2      (muy2)    1.443    0.023   63.135    0.000
+   .x3      (mux3)    1.927    0.009  221.302    0.000
+   .y3      (muy3)    1.576    0.022   72.226    0.000
+   .x4      (mux4)    1.939    0.009  218.246    0.000
+   .y4      (muy4)    1.788    0.023   78.359    0.000
+   .x5      (mux5)    1.961    0.009  212.445    0.000
+   .y5      (muy5)    1.852    0.023   81.020    0.000
+   .x6      (mux6)    1.975    0.010  197.713    0.000
+   .y6      (muy6)    1.865    0.023   80.362    0.000
+   .FFx1              0.000                           
+   .FFy1              0.000                           
+    Bx                0.000                           
+    By                0.000                           
    .FFy2              0.000                           
    .FFy3              0.000                           
    .FFy4              0.000                           
@@ -3038,42 +3235,41 @@ Intercepts:
 
 Variances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
+   .FFx1    (phx1)    0.253    0.008   30.948    0.000
+   .FFy1    (phy1)    0.347    0.049    7.156    0.000
+    Bx      (phBx)    0.112    0.005   20.628    0.000
+    By      (phBy)    0.332    0.043    7.781    0.000
    .x1                0.000                           
-   .y1                0.000                           
    .x2                0.000                           
-   .y2                0.000                           
    .x3                0.000                           
-   .y3                0.000                           
    .x4                0.000                           
-   .y4                0.000                           
    .x5                0.000                           
-   .y5                0.000                           
    .x6                0.000                           
+   .y1                0.000                           
+   .y2                0.000                           
+   .y3                0.000                           
+   .y4                0.000                           
+   .y5                0.000                           
    .y6                0.000                           
-    Ix      (taux)    0.143    0.004   32.629    0.000
-    Iy      (tauy)    0.627    0.035   17.832    0.000
-    FFx1    (phix)    0.241    0.007   35.344    0.000
-    FFy1    (phiy)    0.074    0.028    2.620    0.009
-   .FFx2    (Omgx)    0.184    0.002   78.937    0.000
-   .FFx3    (Omgx)    0.184    0.002   78.937    0.000
-   .FFx4    (Omgx)    0.184    0.002   78.937    0.000
-   .FFx5    (Omgx)    0.184    0.002   78.937    0.000
-   .FFx6    (Omgx)    0.184    0.002   78.937    0.000
-   .FFy2    (Omgy)    0.724    0.011   68.007    0.000
-   .FFy3    (Omgy)    0.724    0.011   68.007    0.000
-   .FFy4    (Omgy)    0.724    0.011   68.007    0.000
-   .FFy5    (Omgy)    0.724    0.011   68.007    0.000
-   .FFy6    (Omgy)    0.724    0.011   68.007    0.000</code></pre>
+   .FFx2    (Omgx)    0.181    0.003   52.721    0.000
+   .FFx3    (Omgx)    0.181    0.003   52.721    0.000
+   .FFx4    (Omgx)    0.181    0.003   52.721    0.000
+   .FFx5    (Omgx)    0.181    0.003   52.721    0.000
+   .FFx6    (Omgx)    0.181    0.003   52.721    0.000
+   .FFy2    (Omgy)    0.621    0.022   28.387    0.000
+   .FFy3    (Omgy)    0.621    0.022   28.387    0.000
+   .FFy4    (Omgy)    0.621    0.022   28.387    0.000
+   .FFy5    (Omgy)    0.621    0.022   28.387    0.000
+   .FFy6    (Omgy)    0.621    0.022   28.387    0.000</code></pre>
 </div>
 </div>
 </section>
-<section id="tex" class="level3" data-number="1.4.2">
-<h3 data-number="1.4.2" class="anchored" data-anchor-id="tex"><span class="header-section-number">1.4.2</span> Tex</h3>
+<section id="usami-5" class="level3" data-number="1.4.3">
+<h3 data-number="1.4.3" class="anchored" data-anchor-id="usami-5"><span class="header-section-number">1.4.3</span> Usami 5</h3>
 <div class="cell">
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">names</span>(Data)<span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;ID&quot;</span>,<span class="st">&quot;m1&quot;</span>,<span class="st">&quot;m2&quot;</span>,<span class="st">&quot;m3&quot;</span>,<span class="st">&quot;m4&quot;</span>,<span class="st">&quot;m5&quot;</span>,<span class="st">&quot;m6&quot;</span> ,<span class="st">&quot;w1&quot;</span>,<span class="st">&quot;w2&quot;</span>,<span class="st">&quot;w3&quot;</span>,<span class="st">&quot;w4&quot;</span>,<span class="st">&quot;w5&quot;</span>,<span class="st">&quot;w6&quot;</span>)</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>riclpm6C.fit<span class="ot">&lt;-</span><span class="fu">cfa</span>(DF<span class="sc">$</span>riclpm6C,<span class="at">data=</span>Data, <span class="at">missing=</span><span class="st">&#39;fiml&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>RICLPMT5.fit<span class="ot">&lt;-</span><span class="fu">sem</span>(DF<span class="sc">$</span>RICLPMT5,<span class="at">data=</span>DF<span class="sc">$</span>semdata, <span class="at">missing=</span><span class="st">&#39;fiml&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING: some cases are empty and will be ignored:
@@ -3081,71 +3277,314 @@ Variances:
 </div>
 <div class="cell-output cell-output-stderr">
 <pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING:
-    due to missing values, some pairwise combinations have 0%
-    coverage; use lavInspect(fit, &quot;coverage&quot;) to investigate.</code></pre>
+    due to missing values, some pairwise combinations have less than
+    10% coverage; use lavInspect(fit, &quot;coverage&quot;) to investigate.</code></pre>
 </div>
 <details>
 <summary>Code</summary>
-<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>riclpm6C.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>broom<span class="sc">::</span><span class="fu">glance</span>(DF<span class="sc">$</span>RICLPMT5.fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </details>
 <div class="cell-output cell-output-stdout">
-<pre><code>lavaan 0.6.15 ended normally after 49 iterations
+<pre><code># A tibble: 1 × 17
+   agfi    AIC    BIC   cfi chisq  npar  rmsea rmsea.conf…¹   srmr   tli conve…²
+  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;  
+1 0.992 60301. 60450. 0.963  449.    23 0.0456       0.0494 0.0592 0.960 TRUE   
+# … with 6 more variables: estimator &lt;chr&gt;, ngroups &lt;int&gt;,
+#   missing_method &lt;chr&gt;, nobs &lt;int&gt;, norig &lt;int&gt;, nexcluded &lt;int&gt;, and
+#   abbreviated variable names ¹​rmsea.conf.high, ²​converged</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>RICLPMT5.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>, <span class="at">standardized =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.15 ended normally after 42 iterations
 
   Estimator                                         ML
   Optimization method                           NLMINB
-  Number of model parameters                        53
-  Number of equality constraints                    20
+  Number of model parameters                        44
+  Number of equality constraints                    21
 
                                                   Used       Total
   Number of observations                          4670        4824
-  Number of missing patterns                       155            
+  Number of missing patterns                        98            
 
 Model Test User Model:
                                                       
-  Test statistic                               402.069
-  Degrees of freedom                                57
+  Test statistic                               449.246
+  Degrees of freedom                                42
   P-value (Chi-square)                           0.000
 
 Model Test Baseline Model:
 
-  Test statistic                             14857.111
-  Degrees of freedom                                66
+  Test statistic                             11058.772
+  Degrees of freedom                                45
   P-value                                        0.000
 
 User Model versus Baseline Model:
 
-  Comparative Fit Index (CFI)                    0.977
-  Tucker-Lewis Index (TLI)                       0.973
+  Comparative Fit Index (CFI)                    0.963
+  Tucker-Lewis Index (TLI)                       0.960
                                                       
-  Robust Comparative Fit Index (CFI)             0.955
-  Robust Tucker-Lewis Index (TLI)                0.948
+  Robust Comparative Fit Index (CFI)             0.924
+  Robust Tucker-Lewis Index (TLI)                0.919
 
 Loglikelihood and Information Criteria:
 
-  Loglikelihood user model (H0)             -35908.499
-  Loglikelihood unrestricted model (H1)     -35707.465
+  Loglikelihood user model (H0)             -30127.739
+  Loglikelihood unrestricted model (H1)     -29903.116
                                                       
-  Akaike (AIC)                               71882.999
-  Bayesian (BIC)                             72095.813
-  Sample-size adjusted Bayesian (SABIC)      71990.951
+  Akaike (AIC)                               60301.478
+  Bayesian (BIC)                             60449.803
+  Sample-size adjusted Bayesian (SABIC)      60376.717
 
 Root Mean Square Error of Approximation:
 
-  RMSEA                                          0.036
-  90 Percent confidence interval - lower         0.033
-  90 Percent confidence interval - upper         0.039
-  P-value H_0: RMSEA &lt;= 0.050                    1.000
+  RMSEA                                          0.046
+  90 Percent confidence interval - lower         0.042
+  90 Percent confidence interval - upper         0.049
+  P-value H_0: RMSEA &lt;= 0.050                    0.971
   P-value H_0: RMSEA &gt;= 0.080                    0.000
                                                       
-  Robust RMSEA                                   0.072
-  90 Percent confidence interval - lower         0.065
-  90 Percent confidence interval - upper         0.079
+  Robust RMSEA                                   0.095
+  90 Percent confidence interval - lower         0.088
+  90 Percent confidence interval - upper         0.102
   P-value H_0: Robust RMSEA &lt;= 0.050             0.000
-  P-value H_0: Robust RMSEA &gt;= 0.080             0.028
+  P-value H_0: Robust RMSEA &gt;= 0.080             1.000
 
 Standardized Root Mean Square Residual:
 
-  SRMR                                           0.043
+  SRMR                                           0.059
+
+Parameter Estimates:
+
+  Standard errors                             Standard
+  Information                                 Observed
+  Observed information based on                Hessian
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFy1 =~                                                               
+    y1                1.000                               0.382    0.472
+  FFy2 =~                                                               
+    y2                1.000                               0.894    0.781
+  FFy3 =~                                                               
+    y3                1.000                               1.056    0.828
+  FFy4 =~                                                               
+    y4                1.000                               1.126    0.844
+  FFy5 =~                                                               
+    y5                1.000                               1.159    0.851
+  FFx1 =~                                                               
+    x1                1.000                               0.485    0.784
+  FFx2 =~                                                               
+    x2                1.000                               0.439    0.753
+  FFx3 =~                                                               
+    x3                1.000                               0.437    0.752
+  FFx4 =~                                                               
+    x4                1.000                               0.437    0.752
+  FFx5 =~                                                               
+    x5                1.000                               0.437    0.752
+  Ix =~                                                                 
+    x1                1.000                               0.383    0.620
+    x2                1.000                               0.383    0.658
+    x3                1.000                               0.383    0.659
+    x4                1.000                               0.383    0.659
+    x5                1.000                               0.383    0.659
+  Iy =~                                                                 
+    y1                1.000                               0.715    0.882
+    y2                1.000                               0.715    0.625
+    y3                1.000                               0.715    0.561
+    y4                1.000                               0.715    0.536
+    y5                1.000                               0.715    0.525
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFy2 ~                                                                
+    FFy1    (bety)    0.697    0.016   44.265    0.000    0.298    0.298
+    FFx1    (gmmy)    0.012    0.027    0.441    0.659    0.007    0.007
+  FFx2 ~                                                                
+    FFx1    (betx)    0.160    0.013   12.630    0.000    0.176    0.176
+    FFy1    (gmmx)    0.007    0.008    0.790    0.430    0.006    0.006
+  FFy3 ~                                                                
+    FFy2    (bety)    0.697    0.016   44.265    0.000    0.590    0.590
+    FFx2    (gmmy)    0.012    0.027    0.441    0.659    0.005    0.005
+  FFx3 ~                                                                
+    FFx2    (betx)    0.160    0.013   12.630    0.000    0.160    0.160
+    FFy2    (gmmx)    0.007    0.008    0.790    0.430    0.013    0.013
+  FFy4 ~                                                                
+    FFy3    (bety)    0.697    0.016   44.265    0.000    0.653    0.653
+    FFx3    (gmmy)    0.012    0.027    0.441    0.659    0.005    0.005
+  FFx4 ~                                                                
+    FFx3    (betx)    0.160    0.013   12.630    0.000    0.160    0.160
+    FFy3    (gmmx)    0.007    0.008    0.790    0.430    0.016    0.016
+  FFy5 ~                                                                
+    FFy4    (bety)    0.697    0.016   44.265    0.000    0.677    0.677
+    FFx4    (gmmy)    0.012    0.027    0.441    0.659    0.005    0.005
+  FFx5 ~                                                                
+    FFx4    (betx)    0.160    0.013   12.630    0.000    0.160    0.160
+    FFy4    (gmmx)    0.007    0.008    0.790    0.430    0.017    0.017
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+  FFx1 ~~                                                               
+    Ix                0.000                               0.000    0.000
+  FFy1 ~~                                                               
+    Ix                0.000                               0.000    0.000
+  FFx1 ~~                                                               
+    Iy                0.000                               0.000    0.000
+  FFy1 ~~                                                               
+    Iy                0.000                               0.000    0.000
+  Ix ~~                                                                 
+    Iy      (taxy)   -0.056    0.010   -5.825    0.000   -0.205   -0.205
+  FFy1 ~~                                                               
+    FFx1    (phxy)    0.008    0.014    0.573    0.567    0.043    0.043
+ .FFy2 ~~                                                               
+   .FFx2    (Omgx)   -0.008    0.005   -1.567    0.117   -0.021   -0.021
+ .FFy3 ~~                                                               
+   .FFx3    (Omgx)   -0.008    0.005   -1.567    0.117   -0.021   -0.021
+ .FFy4 ~~                                                               
+   .FFx4    (Omgx)   -0.008    0.005   -1.567    0.117   -0.021   -0.021
+ .FFy5 ~~                                                               
+   .FFx5    (Omgx)   -0.008    0.005   -1.567    0.117   -0.021   -0.021
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1      (mux1)    1.862    0.010  190.163    0.000    1.862    3.012
+   .y1      (muy1)    1.302    0.023   57.010    0.000    1.302    1.607
+   .x2      (mux2)    1.881    0.009  216.869    0.000    1.881    3.229
+   .y2      (muy2)    1.427    0.025   58.182    0.000    1.427    1.247
+   .x3      (mux3)    1.927    0.009  219.390    0.000    1.927    3.314
+   .y3      (muy3)    1.563    0.024   66.105    0.000    1.563    1.225
+   .x4      (mux4)    1.939    0.009  216.697    0.000    1.939    3.334
+   .y4      (muy4)    1.778    0.023   78.305    0.000    1.778    1.333
+   .x5      (mux5)    1.961    0.010  204.563    0.000    1.961    3.372
+   .y5      (muy5)    1.840    0.023   81.712    0.000    1.840    1.351
+    Ix                0.000                               0.000    0.000
+    Iy                0.000                               0.000    0.000
+    FFx1              0.000                               0.000    0.000
+    FFy1              0.000                               0.000    0.000
+   .FFy2              0.000                               0.000    0.000
+   .FFy3              0.000                               0.000    0.000
+   .FFy4              0.000                               0.000    0.000
+   .FFy5              0.000                               0.000    0.000
+   .FFx2              0.000                               0.000    0.000
+   .FFx3              0.000                               0.000    0.000
+   .FFx4              0.000                               0.000    0.000
+   .FFx5              0.000                               0.000    0.000
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)   Std.lv  Std.all
+   .x1                0.000                               0.000    0.000
+   .y1                0.000                               0.000    0.000
+   .x2                0.000                               0.000    0.000
+   .y2                0.000                               0.000    0.000
+   .x3                0.000                               0.000    0.000
+   .y3                0.000                               0.000    0.000
+   .x4                0.000                               0.000    0.000
+   .y4                0.000                               0.000    0.000
+   .x5                0.000                               0.000    0.000
+   .y5                0.000                               0.000    0.000
+    Ix      (taux)    0.147    0.005   31.227    0.000    1.000    1.000
+    Iy      (tauy)    0.511    0.042   12.167    0.000    1.000    1.000
+    FFx1    (phix)    0.235    0.007   34.471    0.000    1.000    1.000
+    FFy1    (phiy)    0.146    0.038    3.826    0.000    1.000    1.000
+   .FFx2    (Omgx)    0.186    0.003   69.409    0.000    0.969    0.969
+   .FFx3    (Omgx)    0.186    0.003   69.409    0.000    0.974    0.974
+   .FFx4    (Omgx)    0.186    0.003   69.409    0.000    0.974    0.974
+   .FFx5    (Omgx)    0.186    0.003   69.409    0.000    0.974    0.974
+   .FFy2    (Omgy)    0.727    0.012   60.604    0.000    0.911    0.911
+   .FFy3    (Omgy)    0.727    0.012   60.604    0.000    0.652    0.652
+   .FFy4    (Omgy)    0.727    0.012   60.604    0.000    0.574    0.574
+   .FFy5    (Omgy)    0.727    0.012   60.604    0.000    0.542    0.542</code></pre>
+</div>
+</div>
+</section>
+<section id="usami-3" class="level3" data-number="1.4.4">
+<h3 data-number="1.4.4" class="anchored" data-anchor-id="usami-3"><span class="header-section-number">1.4.4</span> Usami 3</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>RICLPMT3.fit<span class="ot">&lt;-</span><span class="fu">sem</span>(DF<span class="sc">$</span>RICLPMT3,<span class="at">data=</span>DF<span class="sc">$</span>semdata, <span class="at">missing=</span><span class="st">&#39;fiml&#39;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING: some cases are empty and will be ignored:
+  1028 1870 3105 3459 4429 4671 4672 4673 4674 4675 4676 4677 4678 4679 4680 4681 4682 4683 4684 4685 4686 4687 4688 4689 4690 4691 4692 4693 4694 4695 4696 4697 4698 4699 4700 4701 4702 4703 4704 4705 4706 4707 4708 4709 4710 4711 4712 4713 4714 4715 4716 4717 4718 4719 4720 4721 4722 4723 4724 4725 4726 4727 4728 4729 4730 4731 4732 4733 4734 4735 4736 4737 4738 4739 4740 4741 4742 4743 4744 4745 4746 4747 4748 4749 4750 4751 4752 4753 4754 4755 4756 4757 4758 4759 4760 4761 4762 4763 4764 4765 4766 4767 4768 4769 4770 4771 4772 4773 4774 4775 4776 4777 4778 4779 4780 4781 4782 4783 4784 4785 4786 4787 4788 4789 4790 4791 4792 4793 4794 4795 4796 4797 4798 4799 4800 4801 4802 4803 4804 4805 4806 4807 4808 4809 4810 4811 4812 4813 4814 4815 4816 4817 4818 4819 4820 4821 4822 4823 4824</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>broom<span class="sc">::</span><span class="fu">glance</span>(DF<span class="sc">$</span>RICLPMT3.fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 17
+   agfi    AIC    BIC   cfi chisq  npar  rmsea rmsea.conf…¹   srmr   tli conve…²
+  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;  
+1 0.994 31895. 32018. 0.989  58.0    19 0.0366       0.0457 0.0326 0.979 TRUE   
+# … with 6 more variables: estimator &lt;chr&gt;, ngroups &lt;int&gt;,
+#   missing_method &lt;chr&gt;, nobs &lt;int&gt;, norig &lt;int&gt;, nexcluded &lt;int&gt;, and
+#   abbreviated variable names ¹​rmsea.conf.high, ²​converged</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>RICLPMT3.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.15 ended normally after 43 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        26
+  Number of equality constraints                     7
+
+                                                  Used       Total
+  Number of observations                          4665        4824
+  Number of missing patterns                        22            
+
+Model Test User Model:
+                                                      
+  Test statistic                                58.013
+  Degrees of freedom                                 8
+  P-value (Chi-square)                           0.000
+
+Model Test Baseline Model:
+
+  Test statistic                              4508.611
+  Degrees of freedom                                15
+  P-value                                        0.000
+
+User Model versus Baseline Model:
+
+  Comparative Fit Index (CFI)                    0.989
+  Tucker-Lewis Index (TLI)                       0.979
+                                                      
+  Robust Comparative Fit Index (CFI)             0.986
+  Robust Tucker-Lewis Index (TLI)                0.974
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)             -15928.748
+  Loglikelihood unrestricted model (H1)     -15899.742
+                                                      
+  Akaike (AIC)                               31895.496
+  Bayesian (BIC)                             32018.005
+  Sample-size adjusted Bayesian (SABIC)      31957.630
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.037
+  90 Percent confidence interval - lower         0.028
+  90 Percent confidence interval - upper         0.046
+  P-value H_0: RMSEA &lt;= 0.050                    0.993
+  P-value H_0: RMSEA &gt;= 0.080                    0.000
+                                                      
+  Robust RMSEA                                   0.065
+  90 Percent confidence interval - lower         0.049
+  90 Percent confidence interval - upper         0.081
+  P-value H_0: Robust RMSEA &lt;= 0.050             0.060
+  P-value H_0: Robust RMSEA &gt;= 0.080             0.066
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.033
 
 Parameter Estimates:
 
@@ -3155,158 +3594,291 @@ Parameter Estimates:
 
 Latent Variables:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-  RIM =~                                              
-    m1                1.000                           
-    m2                1.000                           
-    m3                1.000                           
-    m4                1.000                           
-    m5                1.000                           
-    m6                1.000                           
-  RIW =~                                              
-    w1                1.000                           
-    w2                1.000                           
-    w3                1.000                           
-    w4                1.000                           
-    w5                1.000                           
-    w6                1.000                           
-  LM1 =~                                              
-    m1                1.000                           
-  LM2 =~                                              
-    m2                1.000                           
-  LM3 =~                                              
-    m3                1.000                           
-  LM4 =~                                              
-    m4                1.000                           
-  LM5 =~                                              
-    m5                1.000                           
-  LM6 =~                                              
-    m6                1.000                           
-  LW1 =~                                              
-    w1                1.000                           
-  LW2 =~                                              
-    w2                1.000                           
-  LW3 =~                                              
-    w3                1.000                           
-  LW4 =~                                              
-    w4                1.000                           
-  LW5 =~                                              
-    w5                1.000                           
-  LW6 =~                                              
-    w6                1.000                           
+  FFy1 =~                                             
+    y1                1.000                           
+  FFy2 =~                                             
+    y2                1.000                           
+  FFy3 =~                                             
+    y3                1.000                           
+  FFx1 =~                                             
+    x1                1.000                           
+  FFx2 =~                                             
+    x2                1.000                           
+  FFx3 =~                                             
+    x3                1.000                           
+  Ix =~                                               
+    x1                1.000                           
+    x2                1.000                           
+    x3                1.000                           
+  Iy =~                                               
+    y1                1.000                           
+    y2                1.000                           
+    y3                1.000                           
 
 Regressions:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-  LM6 ~                                               
-    LM5     (sp10)    0.170    0.011   15.574    0.000
-    LW5     (cl10)    0.004    0.007    0.497    0.619
-  LM5 ~                                               
-    LM4     (sp10)    0.170    0.011   15.574    0.000
-    LW4     (cl10)    0.004    0.007    0.497    0.619
-  LM4 ~                                               
-    LM3     (sp10)    0.170    0.011   15.574    0.000
-    LW3     (cl10)    0.004    0.007    0.497    0.619
-  LM3 ~                                               
-    LM2     (sp10)    0.170    0.011   15.574    0.000
-    LW2     (cl10)    0.004    0.007    0.497    0.619
-  LM2 ~                                               
-    LM1     (sp10)    0.170    0.011   15.574    0.000
-    LW1     (cl10)    0.004    0.007    0.497    0.619
-  LW6 ~                                               
-    LW5     (sp20)    0.631    0.015   41.478    0.000
-    LM5     (cl20)   -0.012    0.023   -0.503    0.615
-  LW5 ~                                               
-    LW4     (sp20)    0.631    0.015   41.478    0.000
-    LM4     (cl20)   -0.012    0.023   -0.503    0.615
-  LW4 ~                                               
-    LW3     (sp20)    0.631    0.015   41.478    0.000
-    LM3     (cl20)   -0.012    0.023   -0.503    0.615
-  LW3 ~                                               
-    LW2     (sp20)    0.631    0.015   41.478    0.000
-    LM2     (cl20)   -0.012    0.023   -0.503    0.615
-  LW2 ~                                               
-    LW1     (sp20)    0.631    0.015   41.478    0.000
-    LM1     (cl20)   -0.012    0.023   -0.503    0.615
+  FFy2 ~                                              
+    FFy1    (bety)    0.576    0.039   14.948    0.000
+    FFx1    (gmmy)   -0.090    0.043   -2.085    0.037
+  FFx2 ~                                              
+    FFx1    (betx)    0.140    0.028    4.998    0.000
+    FFy1    (gmmx)   -0.015    0.023   -0.681    0.496
+  FFy3 ~                                              
+    FFy2    (bety)    0.576    0.039   14.948    0.000
+    FFx2    (gmmy)   -0.090    0.043   -2.085    0.037
+  FFx3 ~                                              
+    FFx2    (betx)    0.140    0.028    4.998    0.000
+    FFy2    (gmmx)   -0.015    0.023   -0.681    0.496
 
 Covariances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-  RIM ~~                                              
-    LM1               0.000                           
-    LW1               0.000                           
-  RIW ~~                                              
-    LM1               0.000                           
-    LW1               0.000                           
-  RIM ~~                                              
-    RIW     (co00)   -0.051    0.009   -5.927    0.000
- .LM6 ~~                                              
-   .LW6     (co02)   -0.008    0.004   -1.807    0.071
- .LM5 ~~                                              
-   .LW5     (co02)   -0.008    0.004   -1.807    0.071
- .LM4 ~~                                              
-   .LW4     (co02)   -0.008    0.004   -1.807    0.071
- .LM3 ~~                                              
-   .LW3     (co02)   -0.008    0.004   -1.807    0.071
- .LM2 ~~                                              
-   .LW2     (co02)   -0.008    0.004   -1.807    0.071
-  LM1 ~~                                              
-    LW1     (co01)    0.010    0.014    0.754    0.451
+  FFx1 ~~                                             
+    Ix                0.000                           
+  FFy1 ~~                                             
+    Ix                0.000                           
+  FFx1 ~~                                             
+    Iy                0.000                           
+  FFy1 ~~                                             
+    Iy                0.000                           
+  Ix ~~                                               
+    Iy      (taxy)   -0.052    0.013   -4.067    0.000
+  FFy1 ~~                                             
+    FFx1    (phxy)    0.007    0.015    0.457    0.648
+ .FFy2 ~~                                             
+   .FFx2    (Omgx)   -0.007    0.008   -0.963    0.336
+ .FFy3 ~~                                             
+   .FFx3    (Omgx)   -0.007    0.008   -0.963    0.336
 
 Intercepts:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-   .m1                1.863    0.010  189.630    0.000
-   .m2                1.881    0.009  211.891    0.000
-   .m3                1.927    0.009  223.469    0.000
-   .m4                1.939    0.009  218.281    0.000
-   .m5                1.961    0.009  208.789    0.000
-   .m6                1.974    0.010  195.225    0.000
-   .w1                1.317    0.022   58.552    0.000
-   .w2                1.434    0.022   65.059    0.000
-   .w3                1.569    0.022   71.300    0.000
-   .w4                1.786    0.023   79.026    0.000
-   .w5                1.851    0.022   82.466    0.000
-   .w6                1.864    0.023   81.694    0.000
-    RIM               0.000                           
-    RIW               0.000                           
-    LM1               0.000                           
-   .LM2               0.000                           
-   .LM3               0.000                           
-   .LM4               0.000                           
-   .LM5               0.000                           
-   .LM6               0.000                           
-    LW1               0.000                           
-   .LW2               0.000                           
-   .LW3               0.000                           
-   .LW4               0.000                           
-   .LW5               0.000                           
-   .LW6               0.000                           
+   .x1      (mux1)    1.860    0.010  189.670    0.000
+   .y1      (muy1)    1.280    0.023   55.740    0.000
+   .x2      (mux2)    1.882    0.009  212.937    0.000
+   .y2      (muy2)    1.403    0.024   58.918    0.000
+   .x3      (mux3)    1.928    0.009  215.081    0.000
+   .y3      (muy3)    1.538    0.023   66.101    0.000
+    Ix                0.000                           
+    Iy                0.000                           
+    FFx1              0.000                           
+    FFy1              0.000                           
+   .FFy2              0.000                           
+   .FFy3              0.000                           
+   .FFx2              0.000                           
+   .FFx3              0.000                           
 
 Variances:
                    Estimate  Std.Err  z-value  P(&gt;|z|)
-   .m1                0.000                           
-   .m2                0.000                           
-   .m3                0.000                           
-   .m4                0.000                           
-   .m5                0.000                           
-   .m6                0.000                           
-   .w1                0.000                           
-   .w2                0.000                           
-   .w3                0.000                           
-   .w4                0.000                           
-   .w5                0.000                           
-   .w6                0.000                           
-    RIM               0.142    0.004   32.396    0.000
-    RIW               0.654    0.032   20.406    0.000
-    LM1               0.242    0.007   35.436    0.000
-   .LM2               0.206    0.005   39.110    0.000
-   .LM3               0.178    0.005   37.758    0.000
-   .LM4               0.186    0.005   37.471    0.000
-   .LM5               0.178    0.005   34.391    0.000
-   .LM6               0.167    0.005   30.731    0.000
-    LW1               0.130    0.028    4.586    0.000
-   .LW2               0.397    0.019   20.478    0.000
-   .LW3               0.569    0.021   26.874    0.000
-   .LW4               0.838    0.026   32.069    0.000
-   .LW5               0.843    0.024   35.101    0.000
-   .LW6               0.738    0.022   34.003    0.000</code></pre>
+   .x1                0.000                           
+   .y1                0.000                           
+   .x2                0.000                           
+   .y2                0.000                           
+   .x3                0.000                           
+   .y3                0.000                           
+    Ix      (taux)    0.163    0.008   21.577    0.000
+    Iy      (tauy)    0.577    0.037   15.390    0.000
+    FFx1    (phix)    0.219    0.008   27.050    0.000
+    FFy1    (phiy)    0.106    0.032    3.272    0.001
+   .FFx2    (Omgx)    0.184    0.005   33.561    0.000
+   .FFx3    (Omgx)    0.184    0.005   33.561    0.000
+   .FFy2    (Omgy)    0.512    0.016   33.019    0.000
+   .FFy3    (Omgy)    0.512    0.016   33.019    0.000</code></pre>
+</div>
+</div>
+</section>
+<section id="usami-3-gclm" class="level3" data-number="1.4.5">
+<h3 data-number="1.4.5" class="anchored" data-anchor-id="usami-3-gclm"><span class="header-section-number">1.4.5</span> Usami 3 GCLM</h3>
+<div class="cell">
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>DF<span class="sc">$</span>GCLMT3.fit<span class="ot">&lt;-</span><span class="fu">sem</span>(DF<span class="sc">$</span>GCLMT3,<span class="at">data=</span>DF<span class="sc">$</span>semdata, <span class="at">missing=</span><span class="st">&quot;ML&quot;</span>, <span class="at">estimator =</span> <span class="st">&quot;MLR&quot;</span>, <span class="at">meanstructure =</span> <span class="st">&quot;default&quot;</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning in lav_data_full(data = data, group = group, cluster = cluster, : lavaan WARNING: some cases are empty and will be ignored:
+  1028 1870 3105 3459 4429 4671 4672 4673 4674 4675 4676 4677 4678 4679 4680 4681 4682 4683 4684 4685 4686 4687 4688 4689 4690 4691 4692 4693 4694 4695 4696 4697 4698 4699 4700 4701 4702 4703 4704 4705 4706 4707 4708 4709 4710 4711 4712 4713 4714 4715 4716 4717 4718 4719 4720 4721 4722 4723 4724 4725 4726 4727 4728 4729 4730 4731 4732 4733 4734 4735 4736 4737 4738 4739 4740 4741 4742 4743 4744 4745 4746 4747 4748 4749 4750 4751 4752 4753 4754 4755 4756 4757 4758 4759 4760 4761 4762 4763 4764 4765 4766 4767 4768 4769 4770 4771 4772 4773 4774 4775 4776 4777 4778 4779 4780 4781 4782 4783 4784 4785 4786 4787 4788 4789 4790 4791 4792 4793 4794 4795 4796 4797 4798 4799 4800 4801 4802 4803 4804 4805 4806 4807 4808 4809 4810 4811 4812 4813 4814 4815 4816 4817 4818 4819 4820 4821 4822 4823 4824</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>broom<span class="sc">::</span><span class="fu">glance</span>(DF<span class="sc">$</span>GCLMT3.fit)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 17
+   agfi    AIC    BIC   cfi chisq  npar  rmsea rmsea.conf…¹   srmr   tli conve…²
+  &lt;dbl&gt;  &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt; &lt;dbl&gt;  &lt;dbl&gt;        &lt;dbl&gt;  &lt;dbl&gt; &lt;dbl&gt; &lt;lgl&gt;  
+1 0.993 31921. 32043. 0.983  83.4    19 0.0450       0.0539 0.0377 0.969 TRUE   
+# … with 6 more variables: estimator &lt;chr&gt;, ngroups &lt;int&gt;,
+#   missing_method &lt;chr&gt;, nobs &lt;int&gt;, norig &lt;int&gt;, nexcluded &lt;int&gt;, and
+#   abbreviated variable names ¹​rmsea.conf.high, ²​converged</code></pre>
+</div>
+<details>
+<summary>Code</summary>
+<div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(DF<span class="sc">$</span>GCLMT3.fit, <span class="at">fit.measures =</span> <span class="cn">TRUE</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</details>
+<div class="cell-output cell-output-stdout">
+<pre><code>lavaan 0.6.15 ended normally after 35 iterations
+
+  Estimator                                         ML
+  Optimization method                           NLMINB
+  Number of model parameters                        26
+  Number of equality constraints                     7
+
+                                                  Used       Total
+  Number of observations                          4665        4824
+  Number of missing patterns                        22            
+
+Model Test User Model:
+                                              Standard      Scaled
+  Test Statistic                                83.449      45.302
+  Degrees of freedom                                 8           8
+  P-value (Chi-square)                           0.000       0.000
+  Scaling correction factor                                  1.842
+    Yuan-Bentler correction (Mplus variant)                       
+
+Model Test Baseline Model:
+
+  Test statistic                              4508.611    2217.831
+  Degrees of freedom                                15          15
+  P-value                                        0.000       0.000
+  Scaling correction factor                                  2.033
+
+User Model versus Baseline Model:
+
+  Comparative Fit Index (CFI)                    0.983       0.983
+  Tucker-Lewis Index (TLI)                       0.969       0.968
+                                                                  
+  Robust Comparative Fit Index (CFI)                         0.981
+  Robust Tucker-Lewis Index (TLI)                            0.965
+
+Loglikelihood and Information Criteria:
+
+  Loglikelihood user model (H0)             -15941.466  -15941.466
+  Scaling correction factor                                  1.418
+      for the MLR correction                                      
+  Loglikelihood unrestricted model (H1)     -15899.742  -15899.742
+  Scaling correction factor                                  1.911
+      for the MLR correction                                      
+                                                                  
+  Akaike (AIC)                               31920.932   31920.932
+  Bayesian (BIC)                             32043.441   32043.441
+  Sample-size adjusted Bayesian (SABIC)      31983.066   31983.066
+
+Root Mean Square Error of Approximation:
+
+  RMSEA                                          0.045       0.032
+  90 Percent confidence interval - lower         0.037       0.025
+  90 Percent confidence interval - upper         0.054       0.038
+  P-value H_0: RMSEA &lt;= 0.050                    0.815       1.000
+  P-value H_0: RMSEA &gt;= 0.080                    0.000       0.000
+                                                                  
+  Robust RMSEA                                               0.075
+  90 Percent confidence interval - lower                     0.051
+  90 Percent confidence interval - upper                     0.102
+  P-value H_0: Robust RMSEA &lt;= 0.050                         0.047
+  P-value H_0: Robust RMSEA &gt;= 0.080                         0.414
+
+Standardized Root Mean Square Residual:
+
+  SRMR                                           0.038       0.038
+
+Parameter Estimates:
+
+  Standard errors                             Sandwich
+  Information bread                           Observed
+  Observed information based on                Hessian
+
+Latent Variables:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  FFy1 =~                                             
+    y1                1.000                           
+  FFy2 =~                                             
+    y2                1.000                           
+  FFy3 =~                                             
+    y3                1.000                           
+  FFx1 =~                                             
+    x1                1.000                           
+  FFx2 =~                                             
+    x2                1.000                           
+  FFx3 =~                                             
+    x3                1.000                           
+  By =~                                               
+    FFy1              1.000                           
+    FFy2              1.000                           
+    FFy3              1.000                           
+  Bx =~                                               
+    FFx1              1.000                           
+    FFx2              1.000                           
+    FFx3              1.000                           
+
+Regressions:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+  FFy2 ~                                              
+    FFy1    (bety)    0.318    0.083    3.855    0.000
+    FFx1    (gmmy)   -0.013    0.035   -0.371    0.711
+  FFx2 ~                                              
+    FFx1    (betx)    0.068    0.023    2.981    0.003
+    FFy1    (gmmx)    0.018    0.019    0.934    0.350
+  FFy3 ~                                              
+    FFy2    (bety)    0.318    0.083    3.855    0.000
+    FFx2    (gmmy)   -0.013    0.035   -0.371    0.711
+  FFx3 ~                                              
+    FFx2    (betx)    0.068    0.023    2.981    0.003
+    FFy2    (gmmx)    0.018    0.019    0.934    0.350
+
+Covariances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+ .FFx1 ~~                                             
+    Bx                0.000                           
+    By                0.000                           
+ .FFy1 ~~                                             
+    Bx                0.000                           
+    By                0.000                           
+  By ~~                                               
+    Bx      (phBB)   -0.055    0.017   -3.256    0.001
+ .FFy1 ~~                                             
+   .FFx1    (ph11)    0.013    0.017    0.787    0.432
+ .y1 ~~                                               
+   .x1                0.000                           
+ .y2 ~~                                               
+   .x2                0.000                           
+ .y3 ~~                                               
+   .x3                0.000                           
+ .FFy2 ~~                                             
+   .FFx2    (Omgx)    0.003    0.008    0.399    0.690
+ .FFy3 ~~                                             
+   .FFx3    (Omgx)    0.003    0.008    0.399    0.690
+
+Intercepts:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .x1      (mux1)    1.861    0.010  189.080    0.000
+   .y1      (muy1)    1.279    0.025   50.278    0.000
+   .x2      (mux2)    1.882    0.009  208.246    0.000
+   .y2      (muy2)    1.405    0.023   60.189    0.000
+   .x3      (mux3)    1.928    0.009  220.821    0.000
+   .y3      (muy3)    1.539    0.024   63.567    0.000
+   .FFx1              0.000                           
+   .FFy1              0.000                           
+    Bx                0.000                           
+    By                0.000                           
+   .FFy2              0.000                           
+   .FFy3              0.000                           
+   .FFx2              0.000                           
+   .FFx3              0.000                           
+
+Variances:
+                   Estimate  Std.Err  z-value  P(&gt;|z|)
+   .FFx1    (phx1)    0.218    0.010   21.336    0.000
+   .FFy1    (phy1)    0.259    0.057    4.523    0.000
+    Bx      (phBx)    0.160    0.011   15.170    0.000
+    By      (phBy)    0.404    0.090    4.501    0.000
+   .x1                0.000                           
+   .x2                0.000                           
+   .x3                0.000                           
+   .y1                0.000                           
+   .y2                0.000                           
+   .y3                0.000                           
+   .FFx2    (Omgx)    0.171    0.005   34.222    0.000
+   .FFx3    (Omgx)    0.171    0.005   34.222    0.000
+   .FFy2    (Omgy)    0.407    0.035   11.691    0.000
+   .FFy3    (Omgy)    0.407    0.035   11.691    0.000</code></pre>
 </div>
 </div>
 </section>

@@ -68,17 +68,7 @@ DF = list()
 ```{r}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
-DF$orgdat = read.table("flournoy/srcddata.dat",
-                       na.strings = c("999.00"),
-                       col.names = c("anti1", "anti2", "anti3", "anti4", 
-                                     "read1", "read2", "read3", "read4",
-                                     "gen", "momage", "kidage", "homecog", 
-                                     "homeemo", "id")
-) %>%
-  rename(m1 = anti1, m2 = anti2, m3 = anti3, m4 = anti4,
-         w1 = read1, w2 = read2, w3 = read3, w4 = read4)
-  
-
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
 source(here("script/models.R"))
 # toc()
 ```
@@ -87,13 +77,13 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat_1 = DF$orgdat %>% select(!ends_with(c("age","4"))& starts_with(c("m","w")))
-head(DF$semdat_1)
-# DF$semdat_1_long = DF$semdat_1 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+DF$semdat_1 = DF$orgdat %>% select(contains(c("_1600","_1610")) & starts_with(c("kp17","kp18","kp19")))
+# head(DF$semdat_1)
+DF$semdat_1_long = DF$semdat_1 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
 # head(DF$semdat_1_long)
-# 
-# names(DF$semdat_1_long) = c("Welle","m","w")
-
+names(DF$semdat_1_long) = c("Welle","m","w")
+DF$semdat_1 %<>% rename(m1 = kp17_1600, m2 = kp18_1600, m3 = kp19_1600,
+                        w1 = kp17_1610, w2 = kp18_1610, w3 = kp19_1610)
 ```
 
 
@@ -103,7 +93,14 @@ head(DF$semdat_1)
 ```{r}
 # tic()
 DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+
 # toc()
+```
+
+## Prepare VARS
+```{r}
+DF$semdat_1 %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy")))
+# names(DF$semdat_1)<- c("m1", "m2", "m3", "w1", "w2", "w3")
 ```
 
 
@@ -138,11 +135,6 @@ DF$semdat_1 %>% select(contains(c("w"))) %>%
 
 
 # SEM
-## Prepare VARS
-```{r}
-# DF$semdat_1 %<>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
-# names(DF$semdat_1)<- c("m1", "m2", "m3", "w1", "w2", "w3")
-```
 
 ## CLPM Latent
 ```{r}
