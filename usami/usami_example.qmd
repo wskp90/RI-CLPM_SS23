@@ -103,6 +103,19 @@ broom::glance(DF$GCLMT6.fit)
 summary(DF$GCLMT6.fit, fit.measures = TRUE)
 ```
 
+### Usami 6 GCLM2
+```{r}
+DF$GCLM2T6.fit<-cfa(DF$GCLM2T6,data=DF$semdata, missing="fiml")
+broom::glance(DF$GCLM2T6.fit)
+summary(DF$GCLM2T6.fit, fit.measures = TRUE)
+```
+### Zyphur 5 GCLM2
+```{r}
+DF$z_gclmt5.fit<-sem(DF$z_gclmt5,data=DF$semdata, missing="fiml")
+broom::glance(DF$z_gclmt5.fit)
+summary(DF$z_gclmt5.fit, fit.measures = TRUE)
+```
+
 
 ### Usami 5
 ```{r}
