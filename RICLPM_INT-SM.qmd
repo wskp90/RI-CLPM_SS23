@@ -1,10 +1,10 @@
 ---
-title: "Flournoy Beispiel"
-subtitle: "antisocial behavior and reading recognition"
+title: "RECODE GLES Panel"
+subtitle: "Internet vs Social Media-Nutzung"
 author:
 - "Reimar ZEH"
-- "https://johnflournoy.science/2017/10/20/riclpm-lavaan-demo/"
-- "Filename: *A better cross-lagged panel model, from Hamaker et al. (2015)"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
 date: "`r format(Sys.time(), '%m.%d.%Y')`"
 editor: source
 toc: true

@@ -1,0 +1,179 @@
+---
+title: "RI-CLPM and the like"
+subtitle: "Simulated Data"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+pacman::p_load_gh("jsakaluk/GCLM", "jflournoy/riclpmr")
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Simulate Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$var_groups2 <- list(
+  x=c("x1",  "x2",  "x3", "x4", "x5", "x6"),
+  y=c("y1",  "y2",  "y3", "y4", "y5", "y6"))
+
+DF$population.model <- ' f1 =~ 1.2*x1 + 3*x2 + 2.5*x3 + 2*x4 + 1.5*x5 + 1*x6
+                      f2 =~ 0.8*y1 + 2.8*y2 + 2.3*y3 + 1.8*y4 + 1.3*y5 + 0.8*y6
+                      f1 ~ 0.2*f2'
+                      # x1 ~ 0.6*y2; x2 ~ 0.4*y3; x3 ~ 0.6*y4; x4 ~ 0.4*y5; x5 ~ 0.6*y6
+                      # y1 ~ 0.3*x2; y2 ~ 0.5*x3; y3 ~ 0.3*x4; y4 ~ 0.5*x5; y5 ~ 0.3*x6'
+                    
+# DF$cfadat = lavaan::simulateData(population.model, model.type = "cfa",sample.nobs=1000, orthogonal = F)
+# DF$semdat = lavaan::simulateData(DF$population.model, model.type = "sem",sample.nobs=1000, orthogonal = F, seed = 666)
+DF$RImodel2_t6 <- riclpmr::riclpm_text(DF$var_groups2, constrain_over_waves = F)
+DF$semdat = riclpmr::simriclpm(riclpmModel = DF$RImodel2_t6, sample.nobs = 1000)
+trace(riclpmr::simriclpm(riclpmModel = DF$RImodel2_t6, sample.nobs = 1000))
+
+
+
+# DF$grodat = lavaan::simulateData(population.model, model.type = "growth",sample.nobs=1000, orthogonal = F)
+source(here("script/models.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+
+
+
+## Check FRQ
+
+```{r}
+# tic()
+
+# DF$cfadat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+# DF$grodat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+
+# toc()
+```
+
+
+## Check Correlations
+```{r}
+# DF$cfadat %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% psych::cor.plot(.,stars = T)
+# DF$grodat %>% psych::cor.plot(.,stars = T)
+
+
+# DF$semdat_1_long %>% select(!"Welle") %>% 
+#   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   drop_na() %>% 
+#   psych::corr.test()
+# DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   gather(key, value) %>% drop_na() %>% 
+#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+#   ggplot(aes(x = value, color = Welle)) +
+#   geom_density(adjust = 1.6) + 
+#   facet_wrap(vars(Var)) + 
+#   theme_classic()
+
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+# DF$cfadat %>% select(contains(c("x"))) %>% irr::icc()
+# DF$cfadat %>% select(contains(c("y"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("x"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("y"))) %>% irr::icc()
+# DF$grodat %>% select(contains(c("x"))) %>% irr::icc()
+# DF$grodat %>% select(contains(c("y"))) %>% irr::icc()
+
+```
+
+
+# SEM
+## CLPM semdat
+```{r}
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$sem.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("CLPMdat")
+toc()
+```
+
+## RI-CLPM
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$ric.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("RI-CLPMdat")
+toc()
+```
