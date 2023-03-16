@@ -1,0 +1,59 @@
+MODEL:
+! Unit Effects
+Eta1_X by X6-X1;
+Eta1_Y by Y6-Y1;
+
+! Impulses
+u_X6 by X6; X6@0; u_X5 by X5; X5@0; u_X4 by X4; X4@0; u_X3 by X3; 
+X3@0; u_X2 by X2; X2@0; u_X1 by X1; X1@0; 
+u_Y6 by Y6; Y6@0; u_Y5 by Y5; Y5@0; u_Y4 by Y4; Y4@0; u_Y3 by Y3; 
+Y3@0; u_Y2 by Y2; Y2@0; u_Y1 by Y1; Y1@0; 
+
+! AR Terms
+X6-X3 PON X5-X2 (AR1_X); X2 ON X1;
+Y6-Y2 PON Y5-Y1 (AR1_Y);
+
+! MA Terms
+X6-X3 PON u_X5-u_X2 (MA1_X); X6-X3 PON u_X4-u_X1 (MA2_X);
+Y6-Y2 PON u_Y5-u_Y1 (MA1_Y);
+
+! CL Terms
+X6-X3 PON Y5-Y2 (CL1_XY); X2 ON Y1; 
+Y6-Y2 PON X5-X1 (CL1_YX);
+
+! CLMA Terms
+X6-X3 PON u_Y5-u_Y2 (CLMA1_XY); 
+Y6-Y2 PON u_X5-u_X1 (CLMA1_YX);
+
+! Restrictions
+u_X6-u_X1 WITH Eta1_X@0 Eta1_Y@0;
+u_Y6-u_Y1 WITH Eta1_X@0 Eta1_Y@0;
+u_X6-u_X1 WITH u_X6-u_X1@0; 
+u_Y6-u_Y1 WITH u_Y6-u_Y1@0; u_X6-u_X1 WITH u_Y6-u_Y1@0;
+
+! Co-Movements
+u_X6 WITH u_Y6;
+u_X5 WITH u_Y5;
+u_X4 WITH u_Y4;
+u_X3 WITH u_Y3;
+u_X2 WITH u_Y2;
+u_X1 WITH u_Y1;
+
+! Impulse Responses-users must fill in intervening occasions for each ellipses
+MODEL INDIRECT: 
+X6 IND u_X2; X5 IND u_X2; X4 IND u_X2; X3 IND u_X2;
+X6 IND u_Y2; X5 IND u_Y2; X4 IND u_Y2; X3 IND u_Y2; 
+Y6 IND u_X2; Y5 IND u_X2; Y4 IND u_X2; Y3 IND u_X2; 
+Y6 IND u_Y2; Y5 IND u_Y2; Y4 IND u_Y2; Y3 IND u_Y2; 
+
+! Total AR, MA, AR+MA, CL, CLMA, and CL+CLMA effects
+MODEL CONSTRAINT: 
+New (AR_X MA_X ARMA_X CL_XY CLMA_XY CLCL_XY );
+New (AR_Y MA_Y ARMA_Y CL_YX CLMA_YX CLCL_YX );
+
+AR_X=AR1_X; MA_X=MA1_X+MA2_X; ARMA_X=AR1_X+MA1_X+MA2_X; 
+CL_XY=CL1_XY; CLMA_XY=CLMA1_XY; CLCL_XY=CL1_XY+CLMA1_XY; 
+AR_Y=AR1_Y; MA_Y=MA1_Y; ARMA_Y=AR1_Y+MA1_Y; CL_YX=CL1_YX; 
+CLMA_YX=CLMA1_YX; CLCL_YX=CL1_YX+CLMA1_YX;
+
+OUTPUT: STDYX;

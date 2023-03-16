@@ -1,38 +1,38 @@
 #unit effects
-eta_x =~ m1+m2+m3+m4+m5
-eta_y =~ w1+w2+w3+w4+w5
+eta_x =~ x1+x2+x3+x4+x5
+eta_y =~ y1+y2+y3+y4+y5
 
 #impulses
-u_x1 =~ m1 
-u_x2 =~ m2 
-u_x3 =~ m3 
-u_x4 =~ m4 
-u_x5 =~ m5
-m1 ~~ 0*m1 
-m2 ~~ 0*m2 
-m3 ~~ 0*m3 
-m4 ~~ 0*m4 
-m5 ~~ 0*m5
-u_y1 =~ w1 
-u_y2 =~ w2 
-u_y3 =~ w3 
-u_y4 =~ w4 
-u_y5 =~ w5
-w1 ~~ 0*w1 
-w2 ~~ 0*w2 
-w3 ~~ 0*w3 
-w4 ~~ 0*w4 
-w5 ~~ 0*w5
+u_x1 =~ x1 
+u_x2 =~ x2 
+u_x3 =~ x3 
+u_x4 =~ x4 
+u_x5 =~ x5
+x1 ~~ 0*x1 
+x2 ~~ 0*x2 
+x3 ~~ 0*x3 
+x4 ~~ 0*x4 
+x5 ~~ 0*x5
+u_y1 =~ y1 
+u_y2 =~ y2 
+u_y3 =~ y3 
+u_y4 =~ y4 
+u_y5 =~ y5
+y1 ~~ 0*y1 
+y2 ~~ 0*y2 
+y3 ~~ 0*y3 
+y4 ~~ 0*y4 
+y5 ~~ 0*y5
 
 #regressions
-m2 ~ a*m1 + b*w1 + c*u_x1 + d*u_y1 
-m3 ~ a*m2 + b*w2 + c*u_x2 + d*u_y2 
-m4 ~ a*m3 + b*w3 + c*u_x3 + d*u_y3 
-m5 ~ a*m4 + b*w4 + c*u_x4 + d*u_y4
-w2 ~ f*m1 + g*w1 + h*u_x1 + i*u_y1 
-w3 ~ f*m2 + g*w2 + h*u_x2 + i*u_y2 
-w4 ~ f*m3 + g*w3 + h*u_x3 + i*u_y3 
-w5 ~ f*m4 + g*w4 + h*u_x4 + i*u_y4
+x2 ~ a*x1 + b*y1 + c*u_x1 + d*u_y1 
+x3 ~ a*x2 + b*y2 + c*u_x2 + d*u_y2 
+x4 ~ a*x3 + b*y3 + c*u_x3 + d*u_y3 
+x5 ~ a*x4 + b*y4 + c*u_x4 + d*u_y4
+y2 ~ f*x1 + g*y1 + h*u_x1 + i*u_y1 
+y3 ~ f*x2 + g*y2 + h*u_x2 + i*u_y2 
+y4 ~ f*x3 + g*y3 + h*u_x3 + i*u_y3 
+y5 ~ f*x4 + g*y4 + h*u_x4 + i*u_y4
 
 #co-movements
 u_x1 ~~ u_y1 

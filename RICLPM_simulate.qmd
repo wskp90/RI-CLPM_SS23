@@ -154,7 +154,8 @@ DF$semdat %>% select(contains(c("y"))) %>% irr::icc()
 
 
 # SEM
-## CLPM fixed
+## CLPM
+### CLPM fixed
 ```{r}
 tic()
 DF$sem.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
@@ -169,7 +170,7 @@ semPaths(DF$sem.fit, what = "std", whatLabels="std", layout="tree2", intercepts 
 title("CLPMdat fixed")
 toc()
 ```
-## CLPM free
+### CLPM free
 ```{r}
 tic()
 DF$sem.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
@@ -185,8 +186,8 @@ title("CLPMdat free")
 toc()
 ```
 
-
-## RI-CLPM fixed
+## RI-CLPM
+### RI-CLPM fixed
 ```{r}
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
@@ -202,7 +203,7 @@ title("RI-CLPM fixed")
 toc()
 ```
 
-## RI-CLPM freee
+### RI-CLPM freee
 ```{r}
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm5, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
@@ -217,3 +218,57 @@ semPaths(DF$ric.fit, what = "std", whatLabels="std", layout="tree2", intercepts 
 title("RI-CLPMdat free")
 toc()
 ```
+## GCLM
+### Zyphur 5 GCLM2
+```{r}
+DF$z_gclmt5.fit<-sem(DF$z_gclmt5,data=DF$semdat, missing="fiml")
+broom::glance(DF$z_gclmt5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$z_gclmt5.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+
+summary(DF$z_gclmt5.fit, fit.measures = TRUE)
+```
+
+### Usami 5 GCLM1
+```{r}
+DF$u_gclmt5.fit<-sem(DF$GCLMT5,data=DF$semdat, missing="fiml")
+broom::glance(DF$u_gclmt5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$u_gclmt5.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+
+summary(DF$u_gclmt5.fit, fit.measures = TRUE)
+```
+
+### Usami 5 GCLM2
+```{r}
+DF$u_gclmt5.fit<-sem(DF$GCLM2T5,data=DF$semdat, missing="fiml")
+broom::glance(DF$u_gclmt5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$u_gclmt5.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+
+summary(DF$u_gclmt5.fit, fit.measures = TRUE)
+```
+### Sakaluk 5 GCLM
+```{r}
+DF$s_gcmlT5.fit<-sem(DF$s_gcmlT5,data=DF$semdat, missing="fiml")
+broom::glance(DF$s_gcmlT5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$s_gcmlT5.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+# semPaths(DF$s_gcmlT5.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+# title("GCML")
+
+summary(DF$s_gcmlT5.fit, fit.measures = TRUE)
+```
+
