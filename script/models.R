@@ -263,8 +263,8 @@ u_y5 ~~ 0*eta_x + 0*eta_y
 DF$riclpm <-
 '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3
-RIW =~ 1*y1 + 1*y2 + 1*y3
+RIx =~ 1*x1 + 1*x2 + 1*x3
+RIy =~ 1*y1 + 1*y2 + 1*y3
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -283,16 +283,16 @@ y2 ~~ 0*y2
 y3 ~~ 0*y3
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 #CORRELATIONS
 Lx3 ~~ co03*Ly3
 Lx2 ~~ co02*Ly2
 Lx1 ~~ co01*Ly1
-RIM ~~ co04*RIW
+RIx ~~ co04*RIy
 
 #Stability & LAGGED EFFECTS
 Lx3 ~ sp06*Lx2 + cl10*Ly2
@@ -305,8 +305,8 @@ Ly2 ~ sp07*Ly1 + cl11*Lx1
 DF$riclpmC <-
   '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3
-RIW =~ 1*y1 + 1*y2 + 1*y3
+RIx =~ 1*x1 + 1*x2 + 1*x3
+RIy =~ 1*y1 + 1*y2 + 1*y3
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -325,16 +325,16 @@ y2 ~~ 0*y2
 y3 ~~ 0*y3
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 #CORRELATIONS
 Lx3 ~~ co00*Ly3
 Lx2 ~~ co00*Ly2
 Lx1 ~~ co00*Ly1
-RIM ~~ co00*RIW
+RIx ~~ co00*RIy
 
 #Stability & LAGGED EFFECTS
 Lx3 ~ ar10*Lx2 + cl10*Ly2
@@ -348,8 +348,8 @@ Ly2 ~ ar20*Ly1 + cl20*Lx1
 DF$riclpm4 <-
   '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3 + 1*x4
-RIW =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -372,17 +372,17 @@ y3 ~~ 0*y3
 y4 ~~ 0*y4
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 #CORRELATIONS
 Lx4 ~~ co04*Ly4
 Lx3 ~~ co03*Ly3
 Lx2 ~~ co02*Ly2
 Lx1 ~~ co01*Ly1
-RIM ~~ co00*RIW
+RIx ~~ co00*RIy
 
 #Stability & LAGGED EFFECTS
 Lx4 ~ sp13*Lx3 + cl13*Ly3
@@ -398,8 +398,8 @@ Ly2 ~ sp21*Ly1 + cl21*Lx1
 DF$riclpm5 <-
 '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
-RIW =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -426,13 +426,82 @@ y4 ~~ 0*y4
 y5 ~~ 0*y5
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 #CORRELATIONS
-RIM ~~ co00*RIW
+RIx ~~ co00*RIy
+Lx5 ~~ co05*Ly5
+Lx4 ~~ co04*Ly4
+Lx3 ~~ co03*Ly3
+Lx2 ~~ co02*Ly2
+Lx1 ~~ co01*Ly1
+
+#Stability & LAGGED EFFECTS
+Lx5 ~ sp14*Lx4 + cl14*Ly4
+Lx4 ~ sp13*Lx3 + cl13*Ly3
+Lx3 ~ sp12*Lx2 + cl12*Ly2
+Lx2 ~ sp11*Lx1 + cl11*Ly1
+
+Ly5 ~ sp24*Ly4 + cl24*Lx4
+Ly3 ~ sp22*Ly2 + cl22*Lx2
+Ly4 ~ sp23*Ly3 + cl23*Lx3
+Ly2 ~ sp21*Ly1 + cl21*Lx1
+'
+## RI-CLPModell 5 Wellen Simulation unconstrained ####
+DF$riSIM5 <-
+  '
+#CORRELATION of Observed V
+x1 ~ 0.196*y1
+x2 ~ 0.3*y1
+x3 ~ 0.2*y2
+x4 ~ 0.3*y3
+x5 ~ 0.2*y4
+y2 ~ 0.4*x1
+y3 ~ 0.3*x2
+y4 ~ 0.4*x3
+y5 ~ 0.3*x4
+RIx ~ -0.1*RIy
+
+
+#RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
+
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+
+#VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+x4 ~~ 0*x4
+x5 ~~ 0*x5
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+y4 ~~ 0*y4
+y5 ~~ 0*y5
+
+#LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+
+#CORRELATIONS
+RIx ~~ co00*RIy
 Lx5 ~~ co05*Ly5
 Lx4 ~~ co04*Ly4
 Lx3 ~~ co03*Ly3
@@ -456,8 +525,8 @@ Ly2 ~ sp21*Ly1 + cl21*Lx1
 DF$riclpm5C <-
 '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
-RIW =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -484,13 +553,13 @@ y4 ~~ 0*y4
 y5 ~~ 0*y5
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 #CORRELATIONS
-RIM ~~ co00*RIW
+RIx ~~ co00*RIy
 Lx5 ~~ co01*Ly5
 Lx4 ~~ co01*Ly4
 Lx3 ~~ co01*Ly3
@@ -760,8 +829,8 @@ FFx2~~0*FFy2; FFx3~~0*FFy3; FFx4~~0*FFy4; FFx5~~0*FFy5; FFx6~~0*FFy6
 DF$riclpm6C <-
   '
 #RANDOM INTERCEPTS
-RIM =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6
-RIW =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6
 
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -792,14 +861,14 @@ y5 ~~ 0*y5
 y6 ~~ 0*y6
 
 #LATENT FACTORS COVARIANCES @0
-RIM ~~ 0*Lx1
-RIM ~~ 0*Ly1
-RIW ~~ 0*Lx1
-RIW ~~ 0*Ly1
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
 
 
 #CORRELATIONS
-RIM ~~ co00*RIW
+RIx ~~ co00*RIy
 Lx6 ~~ co02*Ly6
 Lx5 ~~ co02*Ly5
 Lx4 ~~ co02*Ly4
