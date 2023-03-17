@@ -180,7 +180,7 @@ broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.doubl
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t4_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%e dit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
 plot(DF$ric_graph)
 toc()
 ```
