@@ -54,7 +54,7 @@ rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
 ```
 
 ## Prepare Lists
@@ -77,13 +77,13 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat_1 = DF$orgdat %>% select(contains(c("_1600","_1610")) & starts_with(c("kp17","kp18","kp19")))
-# head(DF$semdat_1)
-DF$semdat_1_long = DF$semdat_1 %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
-# head(DF$semdat_1_long)
-names(DF$semdat_1_long) = c("Welle","m","w")
-DF$semdat_1 %<>% rename(m1 = kp17_1600, m2 = kp18_1600, m3 = kp19_1600,
-                        w1 = kp17_1610, w2 = kp18_1610, w3 = kp19_1610)
+DF$semdat = DF$orgdat %>% select(contains(c("_1600","_1610")) & starts_with(c("kp17","kp18","kp19")))
+# head(DF$semdat)
+DF$semdat_long = DF$semdat %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+# head(DF$semdat_long)
+names(DF$semdat_long) = c("Welle","x","m")
+DF$semdat %<>% rename(x1 = kp17_1600, x2 = kp18_1600, x3 = kp19_1600,
+                      y1 = kp17_1610, y2 = kp18_1610, y3 = kp19_1610)
 ```
 
 
@@ -92,28 +92,28 @@ DF$semdat_1 %<>% rename(m1 = kp17_1600, m2 = kp18_1600, m3 = kp19_1600,
 
 ```{r}
 # tic()
-DF$semdat_1 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
 # toc()
 ```
 
 ## Prepare VARS
 ```{r}
-DF$semdat_1 %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy")))
-# names(DF$semdat_1)<- c("m1", "m2", "m3", "w1", "w2", "w3")
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy")))
+# names(DF$semdat)<- c("m1", "m2", "m3", "w1", "w2", "w3")
 ```
 
 
 ## Check Correlations
 ```{r}
-DF$semdat_1 %>% psych::cor.plot(.,stars = T)
-DF$semdat_1 %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% psych::cor.plot(.,stars = T)
 
-# DF$semdat_1_long %>% select(!"Welle") %>% 
+# DF$semdat_long %>% select(!"Welle") %>% 
 #   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
 #   drop_na() %>% 
 #   psych::corr.test()
-# DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+# DF$semdat %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
 #   gather(key, value) %>% drop_na() %>% 
 #   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
 #   ggplot(aes(x = value, color = Welle)) +
@@ -127,69 +127,110 @@ DF$semdat_1 %>% psych::cor.plot(.,stars = T)
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
-DF$semdat_1 %>% select(contains(c("m"))) %>% 
+DF$semdat %>% select(contains(c("x"))) %>% 
                          irr::icc()
-DF$semdat_1 %>% select(contains(c("w"))) %>% 
+DF$semdat %>% select(contains(c("y"))) %>% 
                          irr::icc()
 ```
 
 
 # SEM
 
-## CLPM Latent
+## CLPM fixed
 ```{r}
+#| warning: false
 tic()
-DF$int_smL.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
-broom::glance(DF$int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+DF$sem.fit <- lavaan::sem(DF$clpm_LC, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-semPaths(DF$int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
-         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
-title("BTW21 Internet/Social Media")
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+toc()
+```
+
+## CLPM free
+```{r}
+#| warning: false
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
 toc()
 ```
 
 ## CLPM Latent 2 Lag
 ```{r}
+#| warning: false
 tic()
-DF$int_smL.fit <- lavaan::sem(DF$clpm_L2, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
-broom::glance(DF$int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+DF$sem.fit <- lavaan::sem(DF$clpm_L2, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-semPaths(DF$int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
-         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
-title("BTW21 Internet/Social Media")
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+toc()
+```
+
+## RI-CLPM fixed
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpmC, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
 toc()
 ```
 
 
-## RI-CLPM
+## RI-CLPM free
 ```{r}
 #| warning: false
 tic()
-DF$int_smR.fit <- lavaan::sem(DF$riclpm, data=DF$semdat_1, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
-broom::glance(DF$int_smR.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$int_smR.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-semPaths(DF$int_smR.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
-         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
-title("BTW21 Internet/Social Media")
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
 toc()
 ```
 
 
 
 ## Save DATA, if neccessary
-```{r}
+```{r, eval=FALSE}
 #| include: false
 # DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
 ```

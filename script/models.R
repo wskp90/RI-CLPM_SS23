@@ -38,7 +38,30 @@ Lx2 ~ sp11*Lx1 + cl11*Ly1
 Ly3 ~ sp22*Ly2 + cl22*Lx2
 Ly2 ~ sp21*Ly1 + cl21*Lx1
 '
-## CLPModell 4 Wellen Definition unconstrained 2 Lags ####
+## CLPModell 3 Wellen Definition unconstrained ####
+DF$clpm_LC <-
+  '
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+
+#Resiudal Correlation
+Lx1 ~~ co00*Ly1
+Lx2 ~~ co00*Ly2
+Lx3 ~~ co00*Ly3
+
+#Stability & Crosslagged Paths
+Lx3 ~ sp10*Lx2 + cl10*Ly2
+Lx2 ~ sp10*Lx1 + cl10*Ly1
+
+Ly3 ~ sp20*Ly2 + cl20*Lx2
+Ly2 ~ sp20*Ly1 + cl20*Lx1
+'
+## CLPModell 3 Wellen Definition unconstrained 2 Lags ####
 DF$clpm_L2 <-
   '
 #LATENT FACTORS
