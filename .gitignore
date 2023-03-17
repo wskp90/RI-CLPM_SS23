@@ -28,4 +28,9 @@ vignettes/*.pdf
 .Renviron
 .DS_Store
 /.quarto/
+docs/*.html
+/docs/*.html
 docs
+/docs
+/docs/
+*.html

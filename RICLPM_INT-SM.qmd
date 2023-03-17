@@ -227,10 +227,10 @@ plot(DF$ric_graph)
 toc()
 ```
 
-
-
-## Save DATA, if neccessary
+::: {.hidden}
+# Save DATA, if neccessary {.unnumbered .unlisted}
 ```{r, eval=FALSE}
 #| include: false
 # DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
 ```
+:::
