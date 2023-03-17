@@ -54,7 +54,7 @@ rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
 pacman::p_load_gh("jsakaluk/GCLM", "jflournoy/riclpmr")
 ```
 
@@ -158,14 +158,14 @@ DF$semdat %>% select(contains(c("y"))) %>% irr::icc()
 ### CLPM fixed
 ```{r}
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+DF$sem.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat, estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
 broom::tidy(DF$sem.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-semPaths(DF$sem.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+semPaths(DF$sem.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = F, structural = T, 
          curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
 title("CLPMdat fixed")
 toc()
@@ -173,7 +173,7 @@ toc()
 ### CLPM free
 ```{r}
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+DF$sem.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
 broom::tidy(DF$sem.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
@@ -197,11 +197,30 @@ broom::tidy(DF$ric.fit) %>% filter(., label!="") %>% mutate(across(where(is.doub
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-semPaths(DF$ric.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
-         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
-title("RI-CLPM fixed")
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+graph_sem(DF$ric.fit, layout = RI_layout)
 toc()
 ```
+### RI-CLPM fixed-bootstraped
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat, test="bollen.stine", se="bootstrap", bootstrap = 5000)
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_vjust = "top"}, element = "edges") %>% 
+  plot()
+summary(DF$ric.fit, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+# parameterEstimates(DF$ric.fit, boot.ci.type ="bca.simple", level=.95, output="pretty", header=TRUE)
+toc()
+```
+
 
 ### RI-CLPM freee
 ```{r}
