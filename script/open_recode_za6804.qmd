@@ -1,0 +1,292 @@
+---
+title: "Open and Merge GLES Panel"
+subtitle: "ZA6804 BTW2017"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Vorbereitung für RI-CLPM"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+format: html
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: source
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+  rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tictoc,sjlabelled,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,qs,
+               TAM)
+```
+
+## Prepare Lists
+
+```{r}
+spd = list()
+```
+
+## Load SPSS-Data
+
+```{r}
+tic()
+spd$za6804.org = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/ZA6804_de_v7-0-0.sav"), drop.labels = F, tag.na = TRUE)
+# spd$za6838.org = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w1to9_sA_v5-0-0.sav"), drop.labels = F, tag.na = TRUE)
+toc()
+```
+
+## Select VARS
+
+```{r}
+tic()
+spd$za6804.sel = spd$za6804.org %>% 
+  select(c("lfdn","wei_mz","wei4_mz","ostwest",
+             "w1a","w2a","w3a","w4a","w5a","w6a","w7a","w8a","w9a",
+             "w1b","w2b","w3b","w4b","w5b","w6b","w7b","w8b","w9b",
+             "kp1_010", "kp2_010", "kp3_010","kp4_010","kp5_010","kp6_010","kp7_010","kp8_010",
+             "kp1_090_v1","kp1_110","kp1_130","kpx_2280", "kpx_2290","kp1_2320","kp1_2601",
+             "kp2_3430q","kp4_3430q","kp6_3430q","kp3_3430v","kp5_3430v","kp7_3430v",
+             "kp2_3430c","kp4_3430c","kp6_3430c",
+             "kp2_3430l","kp4_3430l","kp6_3430l","kp3_3430s","kp5_3430s","kp7_3430s",
+             "kp2_3430r","kp4_3430r","kp6_3430r","kp3_3430j","kp5_3430j","kp7_3430j",
+             "kp2_3430p","kp4_3430p","kp6_3430p",
+             "kp3_3430t","kp5_3430t","kp7_3430t","kp3_3430a","kp5_3430a","kp7_3430a",
+             "kp2_3430m","kp4_3430m","kp6_3430m","kp3_3430u","kp5_3430u","kp7_3430u",
+             "kp2_1490a","kp2_1490b","kp2_1490c","kp2_1490d","kp2_1490e","kp2_1490f","kp2_1490i",
+    		     "kp4_1490a","kp4_1490b","kp4_1490c","kp4_1490d","kp4_1490e","kp4_1490f","kp4_1490i",
+		         "kp7_1490a","kp7_1490b","kp7_1490c","kp7_1490d","kp7_1490e","kp7_1490f","kp7_1490i",
+			       "kp2_1070a","kp2_1070b","kp2_1070c","kp2_1070d","kp2_1070e","kp2_1070f","kp2_1070i",
+             "kp2_1110a","kp2_1110b","kp2_1110c","kp2_1110d","kp2_1110e","kp2_1110f","kp2_1110i",
+             "kp2_1270a","kp2_1270b","kp2_1270c","kp2_1270d","kp2_1270e","kp2_1270f","kp2_1270i",
+             "kp4_1070a","kp4_1070b","kp4_1070c","kp4_1070d","kp4_1070e","kp4_1070f","kp4_1070i",
+             "kp4_1110a","kp4_1110b","kp4_1110c","kp4_1110d","kp4_1110e","kp4_1110f","kp4_1110i",
+             "kp4_1270a","kp4_1270b","kp4_1270c","kp4_1270d","kp4_1270e","kp4_1270f","kp4_1270i",
+             "kp7_1070a","kp7_1070b","kp7_1070c","kp7_1070d","kp7_1070e","kp7_1070f","kp7_1070i",
+             "kp7_1110a","kp7_1110b","kp7_1110c","kp7_1110d","kp7_1110e","kp7_1110f","kp7_1110i",
+             "kp7_1270a","kp7_1270b","kp7_1270c","kp7_1270d","kp7_1270e","kp7_1270f","kp7_1270i",
+			       "kp7_1391a","kp7_1391b","kp7_1391c","kp7_1391d","kp7_1391e","kp7_1391f","kp7_1391i",
+             "kp1_1661a","kp1_1661b","kp1_1661c","kp1_1661d","kp1_1661e","kp1_1661f",
+             "kp3_1661a","kp3_1661b","kp3_1661c","kp3_1661d","kp3_1661e","kp3_1661f",
+             "kp4_1661a","kp4_1661b","kp4_1661c","kp4_1661d","kp4_1661e","kp4_1661f",
+             "kp5_1661a","kp5_1661b","kp5_1661c","kp5_1661d","kp5_1661e","kp5_1661f",
+             "kp6_1661a","kp6_1661b","kp6_1661c","kp6_1661d","kp6_1661e","kp6_1661f",
+             "kp7_1661a","kp7_1661b","kp7_1661c","kp7_1661d","kp7_1661e","kp7_1661f",
+             "kp1_1681a","kp1_1681b","kp1_1681c","kp1_1681d",
+             "kp3_1681a","kp3_1681b","kp3_1681c","kp3_1681d",
+             "kp4_1681a","kp4_1681b","kp4_1681c","kp4_1681d",
+             "kp5_1681a","kp5_1681b","kp5_1681c","kp5_1681d",
+             "kp6_1681a","kp6_1681b","kp6_1681c","kp6_1681d",
+             "kp7_1681a","kp7_1681b","kp7_1681c","kp7_1681d",
+             "kp1_1600","kp3_1600","kp4_1600","kp5_1600","kp6_1600","kp7_1600",
+             "kp1_1702","kp3_1702","kp4_1702","kp5_1702","kp6_1702","kp7_1702",
+             "kp4_1610","kp5_1610","kp7_1610",
+             "kp4_1616a","kp5_1616a","kp7_1616a",
+             "kp4_1616b","kp5_1616b","kp7_1616b",
+             "kp4_1616c","kp5_1616c","kp7_1616c",
+             "kp3_1555a","kp3_1555b","kp3_1555c","kp3_1555d","kp3_1555e",
+             "kp6_1555a","kp6_1555b","kp6_1555c","kp6_1555d","kp6_1555e",
+             "kp1_1631",
+             "kp1_1933","kp2_1933","kp3_1933","kp4_1933","kp5_1933","kp6_1933","kp7_1933"))
+toc()
+```
+```{r}
+spd$za6804.org %>% select(ends_with("1610")) %>% summary(.,maxsum = 20) %>% knitr::kable() 
+spd$za6804.sel %>% select(ends_with("1610")) %>% summary(.,maxsum = 20) %>% knitr::kable() 
+
+```
+
+## Missing Mediennutzung
+```{r}
+spd$za6804.sel %<>% mutate(across(c(kp1_1661a,kp1_1661b,kp1_1661c,kp1_1661d,kp1_1661e,kp1_1661f,
+                                              kp3_1661a,kp3_1661b,kp3_1661c,kp3_1661d,kp3_1661e,kp3_1661f,
+                                              kp4_1661a,kp4_1661b,kp4_1661c,kp4_1661d,kp4_1661e,kp4_1661f,
+                                              kp5_1661a,kp5_1661b,kp5_1661c,kp5_1661d,kp5_1661e,kp5_1661f,
+                                              kp6_1661a,kp6_1661b,kp6_1661c,kp6_1661d,kp6_1661e,kp6_1661f,
+                                              kp7_1661a,kp7_1661b,kp7_1661c,kp7_1661d,kp7_1661e,kp7_1661f,
+                                              kp1_1681a,kp1_1681b,kp1_1681c,kp1_1681d,
+                                              kp3_1681a,kp3_1681b,kp3_1681c,kp3_1681d,
+                                              kp4_1681a,kp4_1681b,kp4_1681c,kp4_1681d,
+                                              kp5_1681a,kp5_1681b,kp5_1681c,kp5_1681d,
+                                              kp6_1681a,kp6_1681b,kp6_1681c,kp6_1681d,
+                                              kp7_1681a,kp7_1681b,kp7_1681c,kp7_1681d,
+                                              kp1_1600,kp3_1600,kp4_1600,kp5_1600,kp6_1600,kp7_1600,
+                                              kp1_1933,kp2_1933,kp3_1933,kp4_1933,kp5_1933,kp6_1933,kp7_1933),
+                                         ~rec(., rec = "-99:-1=NA;else = copy"))) #Mediennutzung
+
+spd$za6804.sel %<>% mutate(across(c(kp4_1610,kp5_1610,kp7_1610,
+                                              kp4_1616a,kp5_1616a,kp7_1616a,
+                                              kp4_1616b,kp5_1616b,kp7_1616b,
+                                              kp4_1616c,kp5_1616c,kp7_1616c,
+                                              kp1_1702,kp3_1702,kp4_1702,kp5_1702,kp6_1702,kp7_1702),
+                                         ~rec(., rec = "-99:-1=NA;else = copy"))) #Social Mediennutzung
+
+
+```
+
+## Recode Mediennutzung
+```{r}
+spd$za6804.sel %<>% mutate(kp1_tvpb = rowSums(across(kp1_1681a:kp1_1681b),na.rm = F),
+                           kp1_tvpb_m = pmap_dbl(select(., c(kp1_1681a:kp1_1681b)), max),
+                           kp4_tvpb = rowSums(across(c(kp4_1681a,kp4_1681b)),na.rm = F),
+                           kp4_tvpb_m = pmap_dbl(select(., c(kp4_1681a,kp4_1681b)), max),
+                           kp5_tvpb = rowSums(across(c(kp5_1681a,kp5_1681b)),na.rm = F),
+                           kp5_tvpb_m = pmap_dbl(select(., c(kp5_1681a,kp4_1681b)), max),
+                           kp6_tvpb = rowSums(across(c(kp6_1681a,kp6_1681b)),na.rm = F),
+                           kp6_tvpb_m = pmap_dbl(select(., c(kp6_1681a,kp6_1681b)), max),
+                           kp7_tvpb = rowSums(across(c(kp7_1681a,kp7_1681b)),na.rm = F),
+                           kp7_tvpb_m = pmap_dbl(select(., c(kp7_1681a,kp7_1681b)), max))
+
+spd$za6804.sel %<>% mutate(kp1_tvcb = rowSums(across(c(kp1_1681c,kp1_1681d)),na.rm = F),
+                           kp1_tvcb_m = pmap_dbl(select(., c(kp1_1681c,kp1_1681d)), max),
+                           kp4_tvcb = rowSums(across(c(kp4_1681c,kp4_1681d)),na.rm = F),
+                           kp4_tvcb_m = pmap_dbl(select(., c(kp4_1681c,kp4_1681d)), max),
+                           kp5_tvcb = rowSums(across(c(kp5_1681c,kp5_1681d)),na.rm = F),
+                           kp5_tvcb_m = pmap_dbl(select(., c(kp5_1681c,kp4_1681d)), max),
+                           kp6_tvcb = rowSums(across(c(kp6_1681c,kp6_1681d)),na.rm = F),
+                           kp6_tvcb_m = pmap_dbl(select(., c(kp6_1681c,kp6_1681d)), max),
+                           kp7_tvcb = rowSums(across(c(kp7_1681c,kp7_1681d)),na.rm = F),
+                           kp7_tvcb_m = pmap_dbl(select(., c(kp7_1681c,kp7_1681d)), max))
+
+spd$za6804.sel %<>% mutate(kp1_taze = rowSums(across(kp1_1661b:kp1_1661f),na.rm = F),
+                           kp1_taze_m = pmap_dbl(select(., kp1_1661b:kp1_1661f), max),
+                           kp4_taze = rowSums(across(kp4_1661b:kp4_1661f),na.rm = F),
+                           kp4_taze_m = pmap_dbl(select(., kp4_1661b:kp4_1661f), max),
+                           kp5_taze = rowSums(across(kp5_1661b:kp5_1661f),na.rm = F),
+                           kp5_taze_m = pmap_dbl(select(., kp5_1661b:kp4_1661f), max),
+                           kp6_taze = rowSums(across(kp6_1661b:kp6_1661f),na.rm = F),
+                           kp6_taze_m = pmap_dbl(select(., kp6_1661b:kp6_1661f), max),
+                           kp7_taze = rowSums(across(kp7_1661b:kp7_1661f),na.rm = F),
+                           kp7_taze_m = pmap_dbl(select(., kp7_1661b:kp7_1661f), max))
+
+spd$za6804.sel %<>% mutate(kp4_taze = rowSums(across(kp4_1616a:kp4_1616c),na.rm = F),
+                           kp4_taze_m = pmap_dbl(select(., kp4_1616a:kp4_1616c), max),
+                           kp5_taze = rowSums(across(kp5_1616a:kp5_1616c),na.rm = F),
+                           kp5_taze_m = pmap_dbl(select(., kp5_1616a:kp4_1616c), max),
+                           kp7_taze = rowSums(across(kp7_1616a:kp7_1616c),na.rm = F),
+                           kp7_taze_m = pmap_dbl(select(., kp7_1616a:kp7_1616c), max))
+
+
+spd$za6804.sel %>% select(contains("tvpb")) %>% frq
+```
+
+## Links-Rechts 2. Welle
+```{r}
+# Links-Rechts Parteien #####
+Sys.sleep(3)
+spd$za6804.sel = spd$za6804.sel %>% 
+  mutate(across(c(kp2_1490a,kp2_1490b,kp2_1490c,kp2_1490d,kp2_1490e,kp2_1490f,kp2_1490i,
+                 kp4_1490a,kp4_1490b,kp4_1490c,kp4_1490d,kp4_1490e,kp4_1490f,kp4_1490i,
+                 kp7_1490a,kp7_1490b,kp7_1490c,kp7_1490d,kp7_1490e,kp7_1490f,kp7_1490i,
+                 ), ~rec(., rec = '-99,-95,-93,=NA;else=copy'))) #links-rechts
+## 2. Welle L-R ####
+spd$za6804.sel$kp2_csugru <-NA
+spd$za6804.sel$kp2_csugru <- spd$za6804.sel$kp2_1490e - spd$za6804.sel$kp2_1490b
+spd$za6804.sel$kp2_csugru[spd$za6804.sel$kp2_csugru > 0 ] <- 0
+spd$za6804.sel$kp2_csugru[spd$za6804.sel$kp2_csugru < -10 ] <- 0
+spd$za6804.sel$kp2_csugru[spd$za6804.sel$kp2_csugru < -0 ] <- 1
+
+spd$za6804.sel$kp2_csuspd <-NA
+spd$za6804.sel$kp2_csuspd <- spd$za6804.sel$kp2_1490c - spd$za6804.sel$kp2_1490b
+spd$za6804.sel$kp2_csuspd[spd$za6804.sel$kp2_csuspd > 0 ] <- 0
+spd$za6804.sel$kp2_csuspd[spd$za6804.sel$kp2_csuspd < -10 ] <- 0
+spd$za6804.sel$kp2_csuspd[spd$za6804.sel$kp2_csuspd < -0 ] <- 1
+
+spd$za6804.sel$kp2_csufdp <-NA
+spd$za6804.sel$kp2_csufdp <- spd$za6804.sel$kp2_1490d - spd$za6804.sel$kp2_1490b
+spd$za6804.sel$kp2_csufdp[spd$za6804.sel$kp2_csufdp > 0 ] <- 0
+spd$za6804.sel$kp2_csufdp[spd$za6804.sel$kp2_csufdp < -10 ] <- 0
+spd$za6804.sel$kp2_csufdp[spd$za6804.sel$kp2_csufdp < -0 ] <- 1
+
+spd$za6804.sel$kp2_cdugru <-NA
+spd$za6804.sel$kp2_cdugru <- spd$za6804.sel$kp2_1490e - spd$za6804.sel$kp2_1490a
+spd$za6804.sel$kp2_cdugru[spd$za6804.sel$kp2_cdugru > 0 ] <- 0
+spd$za6804.sel$kp2_cdugru[spd$za6804.sel$kp2_cdugru < -10 ] <- 0
+spd$za6804.sel$kp2_cdugru[spd$za6804.sel$kp2_cdugru < -0 ] <- 1
+
+spd$za6804.sel$kp2_cduspd <-NA
+spd$za6804.sel$kp2_cduspd <- spd$za6804.sel$kp2_1490c - spd$za6804.sel$kp2_1490a
+spd$za6804.sel$kp2_cduspd[spd$za6804.sel$kp2_cduspd > 0 ] <- 0
+spd$za6804.sel$kp2_cduspd[spd$za6804.sel$kp2_cduspd < -10 ] <- 0
+spd$za6804.sel$kp2_cduspd[spd$za6804.sel$kp2_cduspd < -0 ] <- 1
+
+spd$za6804.sel$kp2_cdufdp <-NA
+spd$za6804.sel$kp2_cdufdp <- spd$za6804.sel$kp2_1490d - spd$za6804.sel$kp2_1490a
+spd$za6804.sel$kp2_cdufdp[spd$za6804.sel$kp2_cdufdp > 0 ] <- 0
+spd$za6804.sel$kp2_cdufdp[spd$za6804.sel$kp2_cdufdp < -10 ] <- 0
+spd$za6804.sel$kp2_cdufdp[spd$za6804.sel$kp2_cdufdp < -0 ] <- 1
+
+spd$za6804.sel$kp2_fdpgru <-NA
+spd$za6804.sel$kp2_fdpgru <- spd$za6804.sel$kp2_1490e - spd$za6804.sel$kp2_1490d
+spd$za6804.sel$kp2_fdpgru[spd$za6804.sel$kp2_fdpgru > 0 ] <- 0
+spd$za6804.sel$kp2_fdpgru[spd$za6804.sel$kp2_fdpgru < -10 ] <- 0
+spd$za6804.sel$kp2_fdpgru[spd$za6804.sel$kp2_fdpgru < -0 ] <- 1
+
+spd$za6804.sel %<>% mutate(kp2_fdpspd = kp2_1490c - kp2_1490d) %>%
+      mutate(kp2_fdpspd = if_else(kp2_fdpspd > 0, 0, kp2_fdpspd)) %>%
+      mutate(kp2_fdpspd = if_else(kp2_fdpspd < -10, 0, kp2_fdpspd)) %>%
+      mutate(kp2_fdpspd = if_else(kp2_fdpspd < 0, 1, kp2_fdpspd))
+
+Sys.sleep(2)
+
+# TAM L-R 2. Welle ####
+za6804.mml = spd$za6804.sel %>% select(kp2_csugru:kp2_fdpspd) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+mml.linrec <- tam.mml.wle(za6804.mml) #Parameter erzeugen
+cat('W2LR WLE-Rel:')
+TAM::WLErel(mml.linrec$theta,mml.linrec$error)
+cat('EAP-Rel:')
+TAM::EAPrel(mml.linrec$theta,mml.linrec$error)
+cat('Cronbachs alpha(KR-20):')
+spd$za6804.sel %>% select(kp2_csugru:kp2_fdpspd) %>% psych::alpha(., na.rm = TRUE) %>% summary
+names(mml.linrec)[3] <- "kp2_ps_lr"
+names(mml.linrec)[5] <- "kp2_theta_lr"
+mml.linrec <- mml.linrec[c(-1,-2,-4,-6,-7)]
+spd$za6804.sel <- cbind(spd$za6804.sel,mml.linrec)
+spd$za6804.sel = spd$za6804.sel %>% select(-kp2_csugru:-kp2_fdpspd) # Variablen löschen
+rm(za6804.mml,mml.linrec)
+Sys.sleep(2)
+spd$za6804.sel = spd$za6804.sel %>% mutate(across(kp2_ps_lr, ~ if_else(is.na(kp2_theta_lr), NA, .)))
+```
+
+
+## Save DATA
+
+```{r}
+qsave(spd$za6804.sel, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/za6804_clpm.qs"))
+```
