@@ -6,8 +6,6 @@ author:
 - "Vorbereitung für RI-CLPM"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
 date: "`r format(Sys.time(), '%m.%d.%Y')`"
-format: html
-editor: source
 toc: true
 number-sections: true
 highlight-style: pygments
