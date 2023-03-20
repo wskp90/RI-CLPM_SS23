@@ -1,13 +1,11 @@
 ---
 title: "Open and Merge GLES Panel"
-subtitle: "ZA6804 BTW2017"
+subtitle: "ZA6838 BTW2017"
 author:
 - "Reimar ZEH"
 - "Vorbereitung für RI-CLPM"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
 date: "`r format(Sys.time(), '%m.%d.%Y')`"
-format: html
-editor: source
 toc: true
 number-sections: true
 highlight-style: pygments
@@ -215,7 +213,7 @@ DF$za6838.sel = DF$za6838.sel %>%
   mutate(across(contains("_1490"), ~rec(., rec = '-99,-95,-93,=NA;else=copy')))
 ```
 
-## 2. Welle
+## Welle 2
 ### Vars erstellen
 ```{r}
 DF$za6838.sel %<>% mutate(kp2_csugru = kp2_1490e - kp2_1490b,
@@ -250,7 +248,7 @@ DF$za6838.sel %<>% select(-kp2_csugru:-kp2_fdpspd) # Variablen löschen
 DF$za6838.sel %<>% mutate(across(kp2_ps_lr, ~ if_else(is.na(kp2_theta_lr), NA, .)))
 ```
 
-## 4. Welle
+## Welle 4
 ### Vars erstellen
 ```{r}
 DF$za6838.sel %<>% mutate(kp4_csugru = kp4_1490e - kp4_1490b,
@@ -285,7 +283,7 @@ DF$za6838.sel %<>% select(-kp4_csugru:-kp4_fdpspd) # Variablen löschen
 DF$za6838.sel %<>% mutate(across(kp4_ps_lr, ~ if_else(is.na(kp4_theta_lr), NA, .)))
 ```
 
-## 7. Welle
+## Welle 7
 ### Vars erstellen
 ```{r}
 DF$za6838.sel %<>% mutate(kp7_csugru = kp7_1490e - kp7_1490b,
@@ -341,7 +339,7 @@ DF$za6838.sel %<>% mutate(across(kp2_1070a, ~ if_else(kp1_2601 ==9, kp2_1070b, .
                           across(kp7_1270a, ~ if_else(kp1_2601 ==9, kp7_1270b, .)))
 ```
 
-## 2. Welle
+## Welle 2
 ### Vars erstellen
 #### SozioÖkonomische Position
 ```{r}
@@ -426,25 +424,352 @@ DF$za6838.sel %<>% mutate(across(kp2_ps_kl, ~if_else(is.na(kp2_theta_kl), NA, .)
 ```
 #### Alle Issues
 ```{r}
-DF$kp2_ip.mml = DF$za6838.sel %>% select(starts_with("kp2_sp","kp2_mig","kp2_kl")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$kp2_ip.mml = DF$za6838.sel %>% select(starts_with(c("kp2_sp","kp2_mig","kp2_kl"))) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
 DF$mml.kp2_ip <- TAM::tam.mml.wle(DF$kp2_ip.mml) #Parameter erzeugen
 cat('W2 SozÖk WLE-Rel:')
 TAM::WLErel(DF$mml.kp2_ip$theta,DF$mml.kp2_ip$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp2_ip$theta,DF$mml.kp2_ip$error)
 cat('Cronbachs alpha(KR-20):')
-DF$za6838.sel %>% select(starts_with("kp2_ip")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with(c("kp2_sp","kp2_mig","kp2_kl"))) %>% psych::alpha(., na.rm = TRUE) %>% summary
 DF$mml.kp2_ip %<>% select(PersonScores,theta) %>% 
   rename("kp2_ps_ip" = "PersonScores", "kp2_theta_ip" = "theta")
 
 DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp2_ip)
 DF$za6838.sel %<>% mutate(across(kp2_ps_ip, ~if_else(is.na(kp2_theta_ip), NA, .)))
 ```
+## Welle 4
+### Vars erstellen
+#### SozioÖkonomische Position
+```{r}
+DF$za6838.sel %<>% mutate(kp4_sp_fpdgru = kp4_1070d - kp4_1070e,
+                          kp4_sp_fpdspd = kp4_1070d - kp4_1070c,
+                          kp4_sp_fpdcds = kp4_1070d - kp4_1070a,
+                          kp4_sp_cdsgru = kp4_1070a - kp4_1070e,
+                          kp4_sp_cdsspd = kp4_1070a - kp4_1070c)
+DF$za6838.sel %<>% mutate(across(kp4_sp_fpdgru:kp4_sp_cdsspd, ~rec(., rec = 'NA=NA;-109:-99,0:109=0;else=1')))
+```
+#### Migration
+```{r}
+DF$za6838.sel %<>% mutate(kp4_mig_afdgru = kp4_1110i - kp4_1110e,
+                          kp4_mig_afdspd = kp4_1110i - kp4_1110c,
+                          kp4_mig_afdcds = kp4_1110i - kp4_1110a,
+                          kp4_mig_fpdgru = kp4_1110d - kp4_1110e,
+                          kp4_mig_fpdspd = kp4_1110d - kp4_1110c,
+                          kp4_mig_cdsgru = kp4_1110a - kp4_1110e)
 
+DF$za6838.sel %<>% mutate(across(kp4_mig_afdgru:kp4_mig_cdsgru, ~rec(., rec = 'NA=NA;-109:0,99:109=0;1:6=1')))
+```
+
+#### Klimaschutz
+```{r}
+DF$za6838.sel %<>% mutate(kp4_kl_afdgru = kp4_1270i - kp4_1270e,
+                          kp4_kl_afdspd = kp4_1270i - kp4_1270c,
+                          kp4_kl_afdcds = kp4_1270i - kp4_1270a,
+                          kp4_kl_fpdgru = kp4_1270d - kp4_1270e,
+                          kp4_kl_fpdspd = kp4_1270d - kp4_1270c,
+                          kp4_kl_cdsspd = kp4_1270a - kp4_1270c,
+                          kp4_kl_cdsgru = kp4_1270a - kp4_1270e)
+DF$za6838.sel %<>% mutate(across(kp4_kl_afdgru:kp4_kl_cdsgru, ~rec(., rec = 'NA=NA;-109:0,99:109=0;1:6=1')))
+```
+### TAM-Modelle
+#### SozioÖkonomische Position
+```{r}
+DF$kp4_sp.mml = DF$za6838.sel %>% select(starts_with("kp4_sp")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp4_sp <- TAM::tam.mml.wle(DF$kp4_sp.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp4_sp$theta,DF$mml.kp4_sp$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp4_sp$theta,DF$mml.kp4_sp$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp4_sp")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp4_sp %<>% select(PersonScores,theta) %>% 
+  rename("kp4_ps_sp" = "PersonScores", "kp4_theta_sp" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp4_sp)
+DF$za6838.sel %<>% mutate(across(kp4_ps_sp, ~if_else(is.na(kp4_theta_sp), NA, .)))
+```
+#### Migration
+```{r}
+DF$kp4_mig.mml = DF$za6838.sel %>% select(starts_with("kp4_mig")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp4_mig <- TAM::tam.mml.wle(DF$kp4_mig.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp4_mig$theta,DF$mml.kp4_mig$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp4_mig$theta,DF$mml.kp4_mig$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp4_mig")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp4_mig %<>% select(PersonScores,theta) %>% 
+  rename("kp4_ps_mig" = "PersonScores", "kp4_theta_mig" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp4_mig)
+DF$za6838.sel %<>% mutate(across(kp4_ps_mig, ~if_else(is.na(kp4_theta_mig), NA, .)))
+```
+#### Klimawandel
+```{r}
+DF$kp4_kl.mml = DF$za6838.sel %>% select(starts_with("kp4_kl")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp4_kl <- TAM::tam.mml.wle(DF$kp4_kl.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp4_kl$theta,DF$mml.kp4_kl$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp4_kl$theta,DF$mml.kp4_kl$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp4_kl")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp4_kl %<>% select(PersonScores,theta) %>% 
+  rename("kp4_ps_kl" = "PersonScores", "kp4_theta_kl" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp4_kl)
+DF$za6838.sel %<>% mutate(across(kp4_ps_kl, ~if_else(is.na(kp4_theta_kl), NA, .)))
+```
+#### Alle Issues
+```{r}
+DF$kp4_ip.mml = DF$za6838.sel %>% select(starts_with(c("kp4_sp","kp4_mig","kp4_kl"))) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp4_ip <- TAM::tam.mml.wle(DF$kp4_ip.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp4_ip$theta,DF$mml.kp4_ip$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp4_ip$theta,DF$mml.kp4_ip$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with(c("kp4_sp","kp4_mig","kp4_kl"))) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp4_ip %<>% select(PersonScores,theta) %>% 
+  rename("kp4_ps_ip" = "PersonScores", "kp4_theta_ip" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp4_ip)
+DF$za6838.sel %<>% mutate(across(kp4_ps_ip, ~if_else(is.na(kp4_theta_ip), NA, .)))
+```
+## Welle 7
+### Vars erstellen
+#### SozioÖkonomische Position
+```{r}
+DF$za6838.sel %<>% mutate(kp7_sp_fpdgru = kp7_1070d - kp7_1070e,
+                          kp7_sp_fpdspd = kp7_1070d - kp7_1070c,
+                          kp7_sp_fpdcds = kp7_1070d - kp7_1070a,
+                          kp7_sp_cdsgru = kp7_1070a - kp7_1070e,
+                          kp7_sp_cdsspd = kp7_1070a - kp7_1070c)
+DF$za6838.sel %<>% mutate(across(kp7_sp_fpdgru:kp7_sp_cdsspd, ~rec(., rec = 'NA=NA;-109:-99,0:109=0;else=1')))
+```
+#### Migration
+```{r}
+DF$za6838.sel %<>% mutate(kp7_mig_afdgru = kp7_1110i - kp7_1110e,
+                          kp7_mig_afdspd = kp7_1110i - kp7_1110c,
+                          kp7_mig_afdcds = kp7_1110i - kp7_1110a,
+                          kp7_mig_fpdgru = kp7_1110d - kp7_1110e,
+                          kp7_mig_fpdspd = kp7_1110d - kp7_1110c,
+                          kp7_mig_cdsgru = kp7_1110a - kp7_1110e)
+
+DF$za6838.sel %<>% mutate(across(kp7_mig_afdgru:kp7_mig_cdsgru, ~rec(., rec = 'NA=NA;-109:0,99:109=0;1:6=1')))
+```
+
+#### Klimaschutz
+```{r}
+DF$za6838.sel %<>% mutate(kp7_kl_afdgru = kp7_1270i - kp7_1270e,
+                          kp7_kl_afdspd = kp7_1270i - kp7_1270c,
+                          kp7_kl_afdcds = kp7_1270i - kp7_1270a,
+                          kp7_kl_fpdgru = kp7_1270d - kp7_1270e,
+                          kp7_kl_fpdspd = kp7_1270d - kp7_1270c,
+                          kp7_kl_cdsspd = kp7_1270a - kp7_1270c,
+                          kp7_kl_cdsgru = kp7_1270a - kp7_1270e)
+DF$za6838.sel %<>% mutate(across(kp7_kl_afdgru:kp7_kl_cdsgru, ~rec(., rec = 'NA=NA;-109:0,99:109=0;1:6=1')))
+```
+### TAM-Modelle
+#### SozioÖkonomische Position
+```{r}
+DF$kp7_sp.mml = DF$za6838.sel %>% select(starts_with("kp7_sp")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp7_sp <- TAM::tam.mml.wle(DF$kp7_sp.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp7_sp$theta,DF$mml.kp7_sp$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp7_sp$theta,DF$mml.kp7_sp$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp7_sp")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp7_sp %<>% select(PersonScores,theta) %>% 
+  rename("kp7_ps_sp" = "PersonScores", "kp7_theta_sp" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp7_sp)
+DF$za6838.sel %<>% mutate(across(kp7_ps_sp, ~if_else(is.na(kp7_theta_sp), NA, .)))
+```
+#### Migration
+```{r}
+DF$kp7_mig.mml = DF$za6838.sel %>% select(starts_with("kp7_mig")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp7_mig <- TAM::tam.mml.wle(DF$kp7_mig.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp7_mig$theta,DF$mml.kp7_mig$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp7_mig$theta,DF$mml.kp7_mig$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp7_mig")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp7_mig %<>% select(PersonScores,theta) %>% 
+  rename("kp7_ps_mig" = "PersonScores", "kp7_theta_mig" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp7_mig)
+DF$za6838.sel %<>% mutate(across(kp7_ps_mig, ~if_else(is.na(kp7_theta_mig), NA, .)))
+```
+#### Klimawandel
+```{r}
+DF$kp7_kl.mml = DF$za6838.sel %>% select(starts_with("kp7_kl")) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp7_kl <- TAM::tam.mml.wle(DF$kp7_kl.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp7_kl$theta,DF$mml.kp7_kl$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp7_kl$theta,DF$mml.kp7_kl$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with("kp7_kl")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp7_kl %<>% select(PersonScores,theta) %>% 
+  rename("kp7_ps_kl" = "PersonScores", "kp7_theta_kl" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp7_kl)
+DF$za6838.sel %<>% mutate(across(kp7_ps_kl, ~if_else(is.na(kp7_theta_kl), NA, .)))
+```
+#### Alle Issues
+```{r}
+DF$kp7_ip.mml = DF$za6838.sel %>% select(starts_with(c("kp7_sp","kp7_mig","kp7_kl"))) %>% TAM::tam.mml(., verbose=FALSE) #Raschmodell schätzen
+DF$mml.kp7_ip <- TAM::tam.mml.wle(DF$kp7_ip.mml) #Parameter erzeugen
+cat('W2 SozÖk WLE-Rel:')
+TAM::WLErel(DF$mml.kp7_ip$theta,DF$mml.kp7_ip$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp7_ip$theta,DF$mml.kp7_ip$error)
+cat('Cronbachs alpha(KR-20):')
+DF$za6838.sel %>% select(starts_with(c("kp7_sp","kp7_mig","kp7_kl"))) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$mml.kp7_ip %<>% select(PersonScores,theta) %>% 
+  rename("kp7_ps_ip" = "PersonScores", "kp7_theta_ip" = "theta")
+
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp7_ip)
+DF$za6838.sel %<>% mutate(across(kp7_ps_ip, ~if_else(is.na(kp7_theta_ip), NA, .)))
+```
+
+# Kandidatenwissen
+## Vars erstellen
+```{r}
+DF$za6838.sel %<>% mutate(across(kp2_3430q,kp3_3430v,kp4_3430q,kp5_3430v,kp6_3430q,kp7_3430v), ~rec(., rec = "322=1;-99,-95,-93,-92=NA;else=0")) #AFD
+DF$za6838.sel %<>% mutate(across(kp2_3430c,kp4_3430c,kp6_3430c), ~rec(., rec = '3=1;-99,-95,-93,-92=NA;else=0')) # CSU
+DF$za6838.sel %<>% mutate(across(kp2_3430l,kp4_3430l,kp6_3430l,kp3_3430s,kp5_3430s,kp7_3430s), ~rec(., rec = '6=1;-99,-95,-93,-92=NA;else=0')) #GRüNE 
+DF$za6838.sel %<>% mutate(across(kp2_3430r,kp4_3430r,kp6_3430r,kp3_3430j,kp5_3430j,kp7_3430j), ~rec(., rec = '4=1;-99,-95,-93,-92=NA;else=0')) #SPD 
+DF$za6838.sel %<>% mutate(across(kp2_3430p,kp4_3430p,kp6_3430p), ~rec(., rec = '5=1;-99,-95,-93,-92=NA;else=0')) #FDP 
+DF$za6838.sel %<>% mutate(across(kp3_3430t,kp5_3430t,kp7_3430t,kp3_3430a,kp5_3430a,kp7_3430a), ~rec(., rec = '2=1;-99,-95,-93,-92=NA;else=0')) #CDU 
+DF$za6838.sel %<>% mutate(across(kp2_3430m,kp4_3430m,kp6_3430m,kp3_3430u,kp5_3430u,kp7_3430u),~rec(., rec = '7=1;-99,-95,-93,-92=NA;else=0')) #LINKE 
+```
+### Welle 2
+```{r}
+DF$kp2_pwk.mml = DF$za6838.sel %>% select(starts_with("kp2_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp2_pwk <- tam.mml.wle(DF$kp2_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp2_pwk$theta,DF$mml.kp2_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp2_pwk$theta,DF$mml.kp2_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp2_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp2_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp2_ps_pwk" = "PersonScores", "kp2_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp2_pwk)
+DF$za6838.sel %<>% mutate(across(kp2_ps_pwk, ~if_else(is.na(kp2_theta_pwk), NA, .)))
+```
+
+### Welle 3
+```{r}
+DF$kp3_pwk.mml = DF$za6838.sel %>% select(starts_with("kp3_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp3_pwk <- tam.mml.wle(DF$kp3_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp3_pwk$theta,DF$mml.kp3_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp3_pwk$theta,DF$mml.kp3_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp3_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp3_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp3_ps_pwk" = "PersonScores", "kp3_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp3_pwk)
+DF$za6838.sel %<>% mutate(across(kp3_ps_pwk, ~if_else(is.na(kp3_theta_pwk), NA, .)))
+```
+
+### Welle 4
+```{r}
+DF$kp4_pwk.mml = DF$za6838.sel %>% select(starts_with("kp4_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp4_pwk <- tam.mml.wle(DF$kp4_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp4_pwk$theta,DF$mml.kp4_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp4_pwk$theta,DF$mml.kp4_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp4_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp4_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp4_ps_pwk" = "PersonScores", "kp4_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp4_pwk)
+DF$za6838.sel %<>% mutate(across(kp4_ps_pwk, ~if_else(is.na(kp4_theta_pwk), NA, .)))
+```
+
+### Welle 5
+```{r}
+DF$kp5_pwk.mml = DF$za6838.sel %>% select(starts_with("kp5_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp5_pwk <- tam.mml.wle(DF$kp5_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp5_pwk$theta,DF$mml.kp5_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp5_pwk$theta,DF$mml.kp5_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp5_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp5_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp5_ps_pwk" = "PersonScores", "kp5_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp5_pwk)
+DF$za6838.sel %<>% mutate(across(kp5_ps_pwk, ~if_else(is.na(kp5_theta_pwk), NA, .)))
+```
+
+### Welle 6
+```{r}
+DF$kp6_pwk.mml = DF$za6838.sel %>% select(starts_with("kp6_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp6_pwk <- tam.mml.wle(DF$kp6_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp6_pwk$theta,DF$mml.kp6_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp6_pwk$theta,DF$mml.kp6_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp6_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp6_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp6_ps_pwk" = "PersonScores", "kp6_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp6_pwk)
+DF$za6838.sel %<>% mutate(across(kp6_ps_pwk, ~if_else(is.na(kp6_theta_pwk), NA, .)))
+```
+
+### Welle 7
+```{r}
+DF$kp7_pwk.mml = DF$za6838.sel %>% select(starts_with("kp7_3430")) %>% tam.mml(., verbose = F) #Raschmodell schätzen
+DF$mml.kp7_pwk <- tam.mml.wle(DF$kp7_pwk.mml, progress = F) #Parameter erzeugen
+cat('W2 PWK WLE-Rel:')
+TAM::WLErel(DF$mml.kp7_pwk$theta,DF$mml.kp7_pwk$error)
+cat('EAP-Rel:')
+TAM::EAPrel(DF$mml.kp7_pwk$theta,DF$mml.kp7_pwk$error)
+cat('Cronbachs alpha(KR-20):')
+ZA6838.data %>% select(starts_with("kp7_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+
+DF$mml.kp7_pwk %<>% select(PersonScores,theta) %>% 
+  rename("kp7_ps_pwk" = "PersonScores", "kp7_theta_pwk" = "theta")
+DF$za6838.sel <- cbind(DF$za6838.sel,DF$mml.kp7_pwk)
+DF$za6838.sel %<>% mutate(across(kp7_ps_pwk, ~if_else(is.na(kp7_theta_pwk), NA, .)))
+```
+
+## Halbskalen
+```{r}
+# Kandiatenwissen Halbskalen #####
+DF$za6838.sel %<>% mutate(kp2_pwk1 = rowSums(across(kp2_3430r,kp2_3430m,kp2_3430l),na.rm = F),
+                          kp2_pwk2 = rowSums(across(kp2_3430q,kp2_3430c,kp2_3430p),na.rm = F),
+                          kp3_pwk1 = rowSums(across(kp3_3430a,kp3_3430t,kp3_3430u),na.rm = F),
+                          kp3_pwk2 = rowSums(across(kp3_3430j,kp3_3430s,kp3_3430v),na.rm = F),
+                          kp4_pwk1 = rowSums(across(kp4_3430r,kp4_3430m,kp4_3430l),na.rm = F),
+                          kp4_pwk2 = rowSums(across(kp4_3430q,kp4_3430c,kp4_3430p),na.rm = F),
+                          kp5_pwk1 = rowSums(across(kp5_3430a,kp5_3430t,kp5_3430u),na.rm = F),
+                          kp5_pwk2 = rowSums(across(kp5_3430j,kp5_3430s,kp5_3430v),na.rm = F),
+                          kp6_pwk1 = rowSums(across(kp6_3430r,kp6_3430m,kp6_3430l),na.rm = F),
+                          kp6_pwk2 = rowSums(across(kp6_3430q,kp6_3430c,kp6_3430p),na.rm = F),
+                          kp7_pwk1 = rowSums(across(kp7_3430a,kp7_3430t,kp7_3430u),na.rm = F),
+                          kp7_pwk2 = rowSums(across(kp7_3430j,kp7_3430s,kp3_3430v),na.rm = F))
+```
 
 
 # Save DATA
 
 ```{r}
-qsave(DF$za6838.sel, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/za6804_clpm.qs"))
+# qsave(DF$za6838.sel, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/za6804_clpm.qs"))
 ```
