@@ -164,6 +164,8 @@ DF$za6838.sel %<>% mutate(across(c(kp4_1610,kp5_1610,kp7_1610,
 ```{r}
 DF$za6838.sel %<>% mutate(kp1_tvpb = rowSums(across(kp1_1681a:kp1_1681b),na.rm = F),
                            kp1_tvpb_m = pmap_dbl(select(., c(kp1_1681a:kp1_1681b)), max),
+                           kp3_tvpb = rowSums(across(c(kp3_1681a,kp3_1681b)),na.rm = F),
+                           kp3_tvpb_m = pmap_dbl(select(., c(kp3_1681a,kp3_1681b)), max),
                            kp4_tvpb = rowSums(across(c(kp4_1681a,kp4_1681b)),na.rm = F),
                            kp4_tvpb_m = pmap_dbl(select(., c(kp4_1681a,kp4_1681b)), max),
                            kp5_tvpb = rowSums(across(c(kp5_1681a,kp5_1681b)),na.rm = F),
@@ -175,6 +177,8 @@ DF$za6838.sel %<>% mutate(kp1_tvpb = rowSums(across(kp1_1681a:kp1_1681b),na.rm =
 
 DF$za6838.sel %<>% mutate(kp1_tvcb = rowSums(across(c(kp1_1681c,kp1_1681d)),na.rm = F),
                            kp1_tvcb_m = pmap_dbl(select(., c(kp1_1681c,kp1_1681d)), max),
+                           kp3_tvcb = rowSums(across(c(kp3_1681c,kp3_1681d)),na.rm = F),
+                           kp3_tvcb_m = pmap_dbl(select(., c(kp3_1681c,kp3_1681d)), max),
                            kp4_tvcb = rowSums(across(c(kp4_1681c,kp4_1681d)),na.rm = F),
                            kp4_tvcb_m = pmap_dbl(select(., c(kp4_1681c,kp4_1681d)), max),
                            kp5_tvcb = rowSums(across(c(kp5_1681c,kp5_1681d)),na.rm = F),
@@ -186,6 +190,8 @@ DF$za6838.sel %<>% mutate(kp1_tvcb = rowSums(across(c(kp1_1681c,kp1_1681d)),na.r
 
 DF$za6838.sel %<>% mutate(kp1_taze = rowSums(across(kp1_1661b:kp1_1661f),na.rm = F),
                            kp1_taze_m = pmap_dbl(select(., kp1_1661b:kp1_1661f), max),
+                           kp3_taze = rowSums(across(kp3_1661b:kp3_1661f),na.rm = F),
+                           kp3_taze_m = pmap_dbl(select(., kp3_1661b:kp3_1661f), max),
                            kp4_taze = rowSums(across(kp4_1661b:kp4_1661f),na.rm = F),
                            kp4_taze_m = pmap_dbl(select(., kp4_1661b:kp4_1661f), max),
                            kp5_taze = rowSums(across(kp5_1661b:kp5_1661f),na.rm = F),
@@ -195,12 +201,12 @@ DF$za6838.sel %<>% mutate(kp1_taze = rowSums(across(kp1_1661b:kp1_1661f),na.rm =
                            kp7_taze = rowSums(across(kp7_1661b:kp7_1661f),na.rm = F),
                            kp7_taze_m = pmap_dbl(select(., kp7_1661b:kp7_1661f), max))
 
-DF$za6838.sel %<>% mutate(kp4_taze = rowSums(across(kp4_1616a:kp4_1616c),na.rm = F),
-                           kp4_taze_m = pmap_dbl(select(., kp4_1616a:kp4_1616c), max),
-                           kp5_taze = rowSums(across(kp5_1616a:kp5_1616c),na.rm = F),
-                           kp5_taze_m = pmap_dbl(select(., kp5_1616a:kp4_1616c), max),
-                           kp7_taze = rowSums(across(kp7_1616a:kp7_1616c),na.rm = F),
-                           kp7_taze_m = pmap_dbl(select(., kp7_1616a:kp7_1616c), max))
+DF$za6838.sel %<>% mutate(kp4_smpa = rowSums(across(kp4_1616a:kp4_1616c),na.rm = F),
+                           kp4_smpa_m = pmap_dbl(select(., kp4_1616a:kp4_1616c), max),
+                           kp5_smpa = rowSums(across(kp5_1616a:kp5_1616c),na.rm = F),
+                           kp5_smpa_m = pmap_dbl(select(., kp5_1616a:kp4_1616c), max),
+                           kp7_smpa = rowSums(across(kp7_1616a:kp7_1616c),na.rm = F),
+                           kp7_smpa_m = pmap_dbl(select(., kp7_1616a:kp7_1616c), max))
 
 
 DF$za6838.sel %>% select(contains("tvpb")) %>% frq
@@ -640,13 +646,13 @@ DF$za6838.sel %<>% mutate(across(kp7_ps_ip, ~if_else(is.na(kp7_theta_ip), NA, .)
 # Kandidatenwissen
 ## Vars erstellen
 ```{r}
-DF$za6838.sel %<>% mutate(across(kp2_3430q,kp3_3430v,kp4_3430q,kp5_3430v,kp6_3430q,kp7_3430v), ~rec(., rec = "322=1;-99,-95,-93,-92=NA;else=0")) #AFD
-DF$za6838.sel %<>% mutate(across(kp2_3430c,kp4_3430c,kp6_3430c), ~rec(., rec = '3=1;-99,-95,-93,-92=NA;else=0')) # CSU
-DF$za6838.sel %<>% mutate(across(kp2_3430l,kp4_3430l,kp6_3430l,kp3_3430s,kp5_3430s,kp7_3430s), ~rec(., rec = '6=1;-99,-95,-93,-92=NA;else=0')) #GRüNE 
-DF$za6838.sel %<>% mutate(across(kp2_3430r,kp4_3430r,kp6_3430r,kp3_3430j,kp5_3430j,kp7_3430j), ~rec(., rec = '4=1;-99,-95,-93,-92=NA;else=0')) #SPD 
-DF$za6838.sel %<>% mutate(across(kp2_3430p,kp4_3430p,kp6_3430p), ~rec(., rec = '5=1;-99,-95,-93,-92=NA;else=0')) #FDP 
-DF$za6838.sel %<>% mutate(across(kp3_3430t,kp5_3430t,kp7_3430t,kp3_3430a,kp5_3430a,kp7_3430a), ~rec(., rec = '2=1;-99,-95,-93,-92=NA;else=0')) #CDU 
-DF$za6838.sel %<>% mutate(across(kp2_3430m,kp4_3430m,kp6_3430m,kp3_3430u,kp5_3430u,kp7_3430u),~rec(., rec = '7=1;-99,-95,-93,-92=NA;else=0')) #LINKE 
+DF$za6838.sel %<>% mutate(across(c(kp2_3430q,kp3_3430v,kp4_3430q,kp5_3430v,kp6_3430q,kp7_3430v), ~rec(., rec = "322=1;-99,-95,-93,-92=NA;else=0"))) #AFD
+DF$za6838.sel %<>% mutate(across(c(kp2_3430c,kp4_3430c,kp6_3430c), ~rec(., rec = '3=1;-99,-95,-93,-92=NA;else=0'))) # CSU
+DF$za6838.sel %<>% mutate(across(c(kp2_3430l,kp4_3430l,kp6_3430l,kp3_3430s,kp5_3430s,kp7_3430s), ~rec(., rec = '6=1;-99,-95,-93,-92=NA;else=0'))) #GRüNE 
+DF$za6838.sel %<>% mutate(across(c(kp2_3430r,kp4_3430r,kp6_3430r,kp3_3430j,kp5_3430j,kp7_3430j), ~rec(., rec = '4=1;-99,-95,-93,-92=NA;else=0'))) #SPD 
+DF$za6838.sel %<>% mutate(across(c(kp2_3430p,kp4_3430p,kp6_3430p), ~rec(., rec = '5=1;-99,-95,-93,-92=NA;else=0'))) #FDP 
+DF$za6838.sel %<>% mutate(across(c(kp3_3430t,kp5_3430t,kp7_3430t,kp3_3430a,kp5_3430a,kp7_3430a), ~rec(., rec = '2=1;-99,-95,-93,-92=NA;else=0'))) #CDU 
+DF$za6838.sel %<>% mutate(across(c(kp2_3430m,kp4_3430m,kp6_3430m,kp3_3430u,kp5_3430u,kp7_3430u),~rec(., rec = '7=1;-99,-95,-93,-92=NA;else=0'))) #LINKE 
 ```
 ### Welle 2
 ```{r}
@@ -657,7 +663,7 @@ TAM::WLErel(DF$mml.kp2_pwk$theta,DF$mml.kp2_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp2_pwk$theta,DF$mml.kp2_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp2_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp2_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp2_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp2_ps_pwk" = "PersonScores", "kp2_theta_pwk" = "theta")
@@ -674,7 +680,7 @@ TAM::WLErel(DF$mml.kp3_pwk$theta,DF$mml.kp3_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp3_pwk$theta,DF$mml.kp3_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp3_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp3_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp3_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp3_ps_pwk" = "PersonScores", "kp3_theta_pwk" = "theta")
@@ -691,7 +697,7 @@ TAM::WLErel(DF$mml.kp4_pwk$theta,DF$mml.kp4_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp4_pwk$theta,DF$mml.kp4_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp4_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp4_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp4_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp4_ps_pwk" = "PersonScores", "kp4_theta_pwk" = "theta")
@@ -708,7 +714,7 @@ TAM::WLErel(DF$mml.kp5_pwk$theta,DF$mml.kp5_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp5_pwk$theta,DF$mml.kp5_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp5_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp5_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp5_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp5_ps_pwk" = "PersonScores", "kp5_theta_pwk" = "theta")
@@ -725,7 +731,7 @@ TAM::WLErel(DF$mml.kp6_pwk$theta,DF$mml.kp6_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp6_pwk$theta,DF$mml.kp6_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp6_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp6_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp6_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp6_ps_pwk" = "PersonScores", "kp6_theta_pwk" = "theta")
@@ -742,7 +748,7 @@ TAM::WLErel(DF$mml.kp7_pwk$theta,DF$mml.kp7_pwk$error)
 cat('EAP-Rel:')
 TAM::EAPrel(DF$mml.kp7_pwk$theta,DF$mml.kp7_pwk$error)
 cat('Cronbachs alpha(KR-20):')
-ZA6838.data %>% select(starts_with("kp7_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
+DF$za6838.sel %>% select(starts_with("kp7_3430")) %>% psych::alpha(., na.rm = TRUE) %>% summary
 
 DF$mml.kp7_pwk %<>% select(PersonScores,theta) %>% 
   rename("kp7_ps_pwk" = "PersonScores", "kp7_theta_pwk" = "theta")
@@ -753,23 +759,25 @@ DF$za6838.sel %<>% mutate(across(kp7_ps_pwk, ~if_else(is.na(kp7_theta_pwk), NA, 
 ## Halbskalen
 ```{r}
 # Kandiatenwissen Halbskalen #####
-DF$za6838.sel %<>% mutate(kp2_pwk1 = rowSums(across(kp2_3430r,kp2_3430m,kp2_3430l),na.rm = F),
-                          kp2_pwk2 = rowSums(across(kp2_3430q,kp2_3430c,kp2_3430p),na.rm = F),
-                          kp3_pwk1 = rowSums(across(kp3_3430a,kp3_3430t,kp3_3430u),na.rm = F),
-                          kp3_pwk2 = rowSums(across(kp3_3430j,kp3_3430s,kp3_3430v),na.rm = F),
-                          kp4_pwk1 = rowSums(across(kp4_3430r,kp4_3430m,kp4_3430l),na.rm = F),
-                          kp4_pwk2 = rowSums(across(kp4_3430q,kp4_3430c,kp4_3430p),na.rm = F),
-                          kp5_pwk1 = rowSums(across(kp5_3430a,kp5_3430t,kp5_3430u),na.rm = F),
-                          kp5_pwk2 = rowSums(across(kp5_3430j,kp5_3430s,kp5_3430v),na.rm = F),
-                          kp6_pwk1 = rowSums(across(kp6_3430r,kp6_3430m,kp6_3430l),na.rm = F),
-                          kp6_pwk2 = rowSums(across(kp6_3430q,kp6_3430c,kp6_3430p),na.rm = F),
-                          kp7_pwk1 = rowSums(across(kp7_3430a,kp7_3430t,kp7_3430u),na.rm = F),
-                          kp7_pwk2 = rowSums(across(kp7_3430j,kp7_3430s,kp3_3430v),na.rm = F))
+DF$za6838.sel %<>% mutate(kp2_pwk1 = rowSums(across(c(kp2_3430r,kp2_3430m,kp2_3430l)),na.rm = F),
+                          kp2_pwk2 = rowSums(across(c(kp2_3430q,kp2_3430c,kp2_3430p)),na.rm = F),
+                          kp3_pwk1 = rowSums(across(c(kp3_3430a,kp3_3430t,kp3_3430u)),na.rm = F),
+                          kp3_pwk2 = rowSums(across(c(kp3_3430j,kp3_3430s,kp3_3430v)),na.rm = F),
+                          kp4_pwk1 = rowSums(across(c(kp4_3430r,kp4_3430m,kp4_3430l)),na.rm = F),
+                          kp4_pwk2 = rowSums(across(c(kp4_3430q,kp4_3430c,kp4_3430p)),na.rm = F),
+                          kp5_pwk1 = rowSums(across(c(kp5_3430a,kp5_3430t,kp5_3430u)),na.rm = F),
+                          kp5_pwk2 = rowSums(across(c(kp5_3430j,kp5_3430s,kp5_3430v)),na.rm = F),
+                          kp6_pwk1 = rowSums(across(c(kp6_3430r,kp6_3430m,kp6_3430l)),na.rm = F),
+                          kp6_pwk2 = rowSums(across(c(kp6_3430q,kp6_3430c,kp6_3430p)),na.rm = F),
+                          kp7_pwk1 = rowSums(across(c(kp7_3430a,kp7_3430t,kp7_3430u)),na.rm = F),
+                          kp7_pwk2 = rowSums(across(c(kp7_3430j,kp7_3430s,kp3_3430v)),na.rm = F))
+                         
+
 ```
 
 
 # Save DATA
 
 ```{r}
-# qsave(DF$za6838.sel, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/za6804_clpm.qs"))
+qsave(DF$za6838.sel, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_clpm.qs"))
 ```
