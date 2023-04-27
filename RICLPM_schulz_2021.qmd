@@ -77,38 +77,39 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(contains(c("_421i","_421b","_421e","_421g","_421d","_170")) & !contains(c("_1701","_1702")) & !ends_with("flag") & !ends_with("y") & starts_with(c("kp5","kp6","kp7")))
-head(DF$semdat)
+DF$semdat = DF$orgdat %>% select(contains(c("_421i","_421b","_421e","_421g","_421d","_170")) & !contains(c("_1701","_1702")) & !ends_with("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
+# head(DF$semdat)
 DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;6=1; else = copy")))
-DF$semdat %<>% mutate(kp5_wwtv = rowSums(across(contains("kp5_421d")),na.rm = F),
-                      kp5_wwtv = dicho(kp5_wwtv, dich.by =  0),
-                      kp6_wwtv = rowSums(across(contains("kp6_421d")),na.rm = F),
-                      kp6_wwtv = as.numeric(kp6_wwtv > 0),
-                      kp7_wwtv = rowSums(across(contains("kp7_421d")),na.rm = F),
-                      kp7_wwtv = as.numeric(kp7_wwtv > 0),
-                      kp5_wwra = rowSums(across(contains("kp5_421e")),na.rm = F),
-                      kp5_wwra = as.numeric(kp5_wwra > 0),
-                      kp6_wwra = rowSums(across(contains("kp6_421e")),na.rm = F),
-                      kp6_wwra = as.numeric(kp6_wwra > 0),
-                      kp7_wwra = rowSums(across(contains("kp7_421e")),na.rm = F),
-                      kp7_wwra = as.numeric(kp7_wwra > 0),
-                      kp5_wwpl = rowSums(across(contains("kp5_421g")),na.rm = F),
-                      kp5_wwpl = as.numeric(kp5_wwpl > 0),
-                      kp6_wwpl = rowSums(across(contains("kp6_421g")),na.rm = F),
-                      kp6_wwpl = as.numeric(kp6_wwpl > 0),
-                      kp7_wwpl = rowSums(across(contains("kp7_421g")),na.rm = F),
-                      kp7_wwpl = as.numeric(kp7_wwpl > 0),
-                      kp5_wwfl = rowSums(across(contains("kp5_421b")),na.rm = F),
-                      kp5_wwfl = as.numeric(kp5_wwfl > 0),
-                      kp6_wwfl = rowSums(across(contains("kp6_421b")),na.rm = F),
-                      kp6_wwfl = as.numeric(kp6_wwfl > 0),
-                      kp7_wwfl = rowSums(across(contains("kp7_421b")),na.rm = F),
-                      kp7_wwfl = as.numeric(kp7_wwfl > 0))
-DF$semdat %<>% mutate(kp5_totww = rowSums(across(contains("kp5_ww")),na.rm =F),
-                      kp6_totww = rowSums(across(contains("kp6_ww")),na.rm =F),
-                      kp7_totww = rowSums(across(contains("kp7_ww")),na.rm =F))
-DF$semdat %<>% rename(x1 = kp5_totww, x2 = kp6_totww, x3 = kp7_totww,
-                      y1 = kp5_170, y2 = kp6_170, y3 = kp7_170)
+DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
+DF$semdat %<>% mutate(kp17_wwtv = rowSums(across(contains("kp17_421d")),na.rm = F),
+                      kp17_wwtv = as.numeric(kp17_wwtv >0),
+                      kp18_wwtv = rowSums(across(contains("kp18_421d")),na.rm = F),
+                      kp18_wwtv = as.numeric(kp18_wwtv > 0),
+                      kp19_wwtv = rowSums(across(contains("kp19_421d")),na.rm = F),
+                      kp19_wwtv = as.numeric(kp19_wwtv > 0),
+                      kp17_wwra = rowSums(across(contains("kp17_421e")),na.rm = F),
+                      kp17_wwra = as.numeric(kp17_wwra > 0),
+                      kp18_wwra = rowSums(across(contains("kp18_421e")),na.rm = F),
+                      kp18_wwra = as.numeric(kp18_wwra > 0),
+                      kp19_wwra = rowSums(across(contains("kp19_421e")),na.rm = F),
+                      kp19_wwra = as.numeric(kp19_wwra > 0),
+                      kp17_wwpl = rowSums(across(contains("kp17_421g")),na.rm = F),
+                      kp17_wwpl = as.numeric(kp17_wwpl > 0),
+                      kp18_wwpl = rowSums(across(contains("kp18_421g")),na.rm = F),
+                      kp18_wwpl = as.numeric(kp18_wwpl > 0),
+                      kp19_wwpl = rowSums(across(contains("kp19_421g")),na.rm = F),
+                      kp19_wwpl = as.numeric(kp19_wwpl > 0),
+                      kp17_wwfl = rowSums(across(contains("kp17_421b")),na.rm = F),
+                      kp17_wwfl = as.numeric(kp17_wwfl > 0),
+                      kp18_wwfl = rowSums(across(contains("kp18_421b")),na.rm = F),
+                      kp18_wwfl = as.numeric(kp18_wwfl > 0),
+                      kp19_wwfl = rowSums(across(contains("kp19_421b")),na.rm = F),
+                      kp19_wwfl = as.numeric(kp19_wwfl > 0))
+DF$semdat %<>% mutate(kp17_totww = rowSums(across(contains("kp17_ww")),na.rm =F),
+                      kp18_totww = rowSums(across(contains("kp18_ww")),na.rm =F),
+                      kp19_totww = rowSums(across(contains("kp19_ww")),na.rm =F))
+DF$semdat %<>% rename(x1 = kp17_totww, x2 = kp18_totww, x3 = kp19_totww,
+                      y1 = kp17_170, y2 = kp18_170, y3 = kp19_170)
 DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
 ```
 
