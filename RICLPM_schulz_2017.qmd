@@ -122,73 +122,9 @@ DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
 ```{r}
 
 for (i in 5:7) {
-  colnam1 <- paste0("kp", i, "_wwtv")
-  varname <- paste0("kp", i, "_421e")
-  DF$semdat <- DF$semdat %>% mutate(!!colnam1 := rowSums(across(contains(!!varname)), na.rm = F),
-                                    !!colnam1 := as.numeric(!!sym(colnam1) > 0))
-}
-
-for (i in 5:7) {
-  colnam1 <- paste0("kp", i, "_wwra")
-  varname <- paste0("kp", i, "_421b")
-  DF$semdat <- DF$semdat %>% mutate(!!colnam1 := rowSums(across(contains(!!varname)), na.rm = F),
-                                    !!colnam1 := as.numeric(!!sym(colnam1) > 0))
-}
-
-for (i in 5:7) {
-  colnam1 <- paste0("kp", i, "_wwfl")
-  varname <- paste0("kp", i, "_421g")
-  DF$semdat <- DF$semdat %>% mutate(!!colnam1 := rowSums(across(contains(!!varname)), na.rm = F),
-                                    !!colnam1 := as.numeric(!!sym(colnam1) > 0))
-}
-
-for (i in 5:7) {
-  colnam1 <- paste0("kp", i, "_wwpl")
-  varname <- paste0("kp", i, "_421d")
-  DF$semdat <- DF$semdat %>% mutate(!!colnam1 := rowSums(across(contains(!!varname)), na.rm = F),
-                                    !!colnam1 := as.numeric(!!sym(colnam1) > 0))
-}
-
-
-for (i in 5:7) {
-  colnam2 <- paste0("kp", i, "_waw")
-  varnam2 <- paste0("kp", i, "_ww")
-  DF$semdat <- DF$semdat %>% mutate(!!colnam2 := rowSums(across(contains(!!varnam2)), na.rm = F))
-}
-
-
-for (i in 5:7) {
-  colnam1 <- paste0("kp", i, "_wwtv")
-  varnam1 <- paste0("kp", i, "_421e")
-  DF$semdat <- DF$semdat %>% 
-    mutate(!!colnam1 := as.numeric(rowSums(across(contains(!!varnam1)), na.rm = F) > 0))
-
-  colnam2 <- paste0("kp", i, "_wwra")
-  varnam2 <- paste0("kp", i, "_421b")
-  DF$semdat <- DF$semdat %>% 
-    mutate(!!colnam2 := as.numeric(rowSums(across(contains(!!varnam2)), na.rm = F) > 0))
-
-  colnam3 <- paste0("kp", i, "_wwfl")
-  varnam3 <- paste0("kp", i, "_421g")
-  DF$semdat <- DF$semdat %>% 
-    mutate(!!colnam3 := as.numeric(rowSums(across(contains(!!varnam3)), na.rm = F) > 0))
-
-  colnam4 <- paste0("kp", i, "_wwpl")
-  varnam4 <- paste0("kp", i, "_421d")
-  DF$semdat <- DF$semdat %>% 
-    mutate(!!colnam4 := as.numeric(rowSums(across(contains(!!varnam4)), na.rm = F) > 0))
-
-  coltot <- paste0("kp", i, "_waw")
-  vartot <- paste0("kp", i, "_ww")
-  DF$semdat <- DF$semdat %>% 
-    mutate(!!coltot := rowSums(across(contains(!!vartot)), na.rm = F))
-}
-
-
-for (i in 5:7) {
-  varnames <- c("_421e", "_421b", "_421g", "_421d")
+  varnames <- c("_421d", "_421e", "_421b", "_421g")
   colnames <- c("_wwtv", "_wwra", "_wwfl", "_wwpl")
-
+  
   for (j in seq_along(varnames)) {
     varname <- paste0("kp", i, varnames[j])
     colname <- paste0("kp", i, colnames[j])

@@ -111,38 +111,27 @@ DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
 
 ## Prepare VARS
 ```{r}
-# DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy")))
-# names(DF$semdat)<- c("m1", "m2", "m3", "w1", "w2", "w3")
-DF$semdat %<>% mutate(kp17_wwtv = rowSums(across(contains("kp17_421d")),na.rm = F),
-                      kp17_wwtv = as.numeric(kp17_wwtv >0),
-                      kp17_wwra = rowSums(across(contains("kp17_421e")),na.rm = F),
-                      kp17_wwra = as.numeric(kp17_wwra > 0),
-                      kp17_wwww = rowSums(across(contains("kp17_421k")),na.rm = F),
-                      kp17_wwww = as.numeric(kp17_wwww > 0),
-                      kp17_wwpl = rowSums(across(contains("kp17_421g")),na.rm = F),
-                      kp17_wwpl = as.numeric(kp17_wwpl > 0),
-                      kp18_wwtv = rowSums(across(contains("kp18_421d")),na.rm = F),
-                      kp18_wwtv = as.numeric(kp18_wwtv >0),
-                      kp18_wwra = rowSums(across(contains("kp18_421e")),na.rm = F),
-                      kp18_wwra = as.numeric(kp18_wwra > 0),
-                      kp18_wwww = rowSums(across(contains("kp18_421k")),na.rm = F),
-                      kp18_wwww = as.numeric(kp18_wwww > 0),
-                      kp18_wwpl = rowSums(across(contains("kp18_421g")),na.rm = F),
-                      kp18_wwpl = as.numeric(kp18_wwpl > 0),
-                      kp19_wwtv = rowSums(across(contains("kp19_421d")),na.rm = F),
-                      kp19_wwtv = as.numeric(kp19_wwtv >0),
-                      kp19_wwra = rowSums(across(contains("kp19_421e")),na.rm = F),
-                      kp19_wwra = as.numeric(kp19_wwra > 0),
-                      kp19_wwww = rowSums(across(contains("kp19_421k")),na.rm = F),
-                      kp19_wwww = as.numeric(kp19_wwww > 0),
-                      kp19_wwpl = rowSums(across(contains("kp19_421g")),na.rm = F),
-                      kp19_wwpl = as.numeric(kp19_wwpl > 0))
+
+for (i in 17:19) {
+  varnames <- c("_421d", "_421e", "_421f", "_421g")
+  colnames <- c("_wwtv", "_wwra", "_wwfl", "_wwpl")
+
+  for (j in seq_along(varnames)) {
+    varname <- paste0("kp", i, varnames[j])
+    colname <- paste0("kp", i, colnames[j])
+    DF$semdat <- DF$semdat %>% 
+      mutate(!!colname := as.numeric(rowSums(across(contains(varname)), na.rm = F) > 0))
+  }
+  coltot <- paste0("kp", i, "_waw")
+  vartot <- paste0("kp", i, "_ww")
+  DF$semdat <- DF$semdat %>% 
+    mutate(!!coltot := rowSums(across(contains(!!vartot)), na.rm = F))
+}
 
 
-DF$semdat %<>% mutate(kp17_totww = rowSums(across(contains("kp17_ww")),na.rm =F),
-                      kp18_totww = rowSums(across(contains("kp18_ww")),na.rm =F),
-                      kp19_totww = rowSums(across(contains("kp19_ww")),na.rm =F))
-DF$semdat %<>% rename(x1 = kp17_totww, x2 = kp18_totww, x3 = kp19_totww,
+
+
+DF$semdat %<>% rename(x1 = kp17_waw, x2 = kp18_waw, x3 = kp19_waw,
                       y1 = kp17_170, y2 = kp18_170, y3 = kp19_170)
 DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
 ```
