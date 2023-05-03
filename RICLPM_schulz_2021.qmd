@@ -81,12 +81,11 @@ DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701
 # head(DF$semdat)
 DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;6=1; else = copy")))
 DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
-# DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends_with("a"))
-
+DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends_with("a"))
 ```
 
 
-
+::: {.hidden}
 ## Check FRQ
 
 ```{r}
@@ -96,8 +95,11 @@ DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
 # toc()
 ```
+:::
 
-## Preliminary Analyse
+
+::: {.hidden}
+## Preliminary Analysis
 ```{r}
 #| include: false
 parameters::n_factors(DF$ws21_efa) %>% knitr::kable(.,format= 'markdown')
@@ -107,6 +109,7 @@ DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 2, fm = "ml", rotate = "oblimin", sc
 DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
 DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
 ```
+:::
 
 ## Prepare VARS
 ```{r}
@@ -138,8 +141,8 @@ DF$semdat %>% select(contains("_ww") & starts_with("kp19")) %>% psych::alpha(., 
   base::summary() %>% kbl() %>% kable_styling() # RDI
 ```
 
-
-## Preliminary Analyse
+::: {.hidden}
+## Preliminary Analysis
 ```{r}
 #| include: false
 DF$ws21_efa = DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% na.omit()
@@ -150,8 +153,9 @@ DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 1, fm = "ml", rotate = "oblimin", sc
 DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
 DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
 ```
+:::
 
-## Rename Vars for SEM
+## Rename & delete Vars for SEM
 ```{r}
 DF$semdat %<>% rename(x1 = kp17_170, x2 = kp18_170, x3 = kp19_170,
                       y1 = kp17_waw, y2 = kp18_waw, y3 = kp19_waw)
