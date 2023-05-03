@@ -52,7 +52,7 @@ set.seed(42)
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
                psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation)
 ```
@@ -136,14 +136,14 @@ for (i in 5:7) {
 
 ## Check reliability
 ```{r}
+#| results: asis
 wellen <- c("kp5", "kp6", "kp7")
 for (j in seq_along(wellen)) {
   reli_obj <- paste0("reli_", wellen[j])
   DF$reli[[reli_obj]] = DF$semdat %>% select(contains("_ww") & starts_with(wellen[j])) %>% psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
 }
-
-DF$reli %>% map(., ~gt::gt(.$total) %>% gtExtras::gt_theme_nytimes())
-DF$reli %>% map(., ~gt::gt(.$alpha.drop) %>% gtExtras::gt_theme_nytimes())
+DF$reli %>% map(., ~gt(.$total) %>% gt_theme_nytimes())
+DF$reli %>% map(., ~rownames_to_column(.$alpha.drop, "ITEM") %>% gt() %>% gt_theme_nytimes())
 ```
 
 
@@ -266,7 +266,7 @@ toc()
 #| warning: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% mutate(across(where(is.double), round, 3))
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% mutate(across(where(is.double), round, 3)) %>% gt()
 broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
   flextable() %>% theme_zebra() %>% 
