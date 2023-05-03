@@ -52,7 +52,7 @@ set.seed(42)
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,kableExtra,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
                psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation)
 ```
@@ -77,11 +77,11 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !ends_with("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
+DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
 # head(DF$semdat)
 DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;6=1; else = copy")))
 DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
-DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends_with("a"))
+# DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends_with("a"))
 
 ```
 
@@ -90,6 +90,7 @@ DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends
 ## Check FRQ
 
 ```{r}
+#| include: false
 # tic()
 DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
@@ -98,23 +99,21 @@ DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
 ## Preliminary Analyse
 ```{r}
+#| include: false
 parameters::n_factors(DF$ws21_efa) %>% knitr::kable(.,format= 'markdown')
 DF$ws21_efa %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 DF$ws21_efa %>% psych::cor.plot(.,stars = T)
 DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 2, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
 DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
 DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
-# DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-92=NA; else = copy"))) %>%
-#   psych::cor.plot(.,stars = T)
-
 ```
 
 ## Prepare VARS
 ```{r}
 
 for (i in 17:19) {
-  varnames <- c("_421d", "_421e", "_421f", "_421g")
-  colnames <- c("_wwtv", "_wwra", "_wwfl", "_wwpl")
+  varnames <- c("_421k", "_421g", "_421a", "_421d", "_421e", "_421h", "_421c", "_421f", "_421i")
+  colnames <- c("_wwww", "_wwpl", "_wwva", "_wwtv", "_wwra", "_wwws", "_wwem", "_wwfl", "_wwsm")
 
   for (j in seq_along(varnames)) {
     varname <- paste0("kp", i, varnames[j])
@@ -127,20 +126,49 @@ for (i in 17:19) {
   DF$semdat <- DF$semdat %>% 
     mutate(!!coltot := rowSums(across(contains(!!vartot)), na.rm = F))
 }
+```
+
+## Check reliability
+```{r}
+DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+  base::summary() %>% kbl() %>% kable_styling() # RDI
+DF$semdat %>% select(contains("_ww") & starts_with("kp18")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+  base::summary() %>% kbl() %>% kable_styling() # RDI
+DF$semdat %>% select(contains("_ww") & starts_with("kp19")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+  base::summary() %>% kbl() %>% kable_styling() # RDI
+```
 
 
+## Preliminary Analyse
+```{r}
+#| include: false
+DF$ws21_efa = DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% na.omit()
+parameters::n_factors(DF$ws21_efa) %>% knitr::kable(.,format= 'markdown')
+DF$ws21_efa %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$ws21_efa %>% psych::cor.plot(.,stars = T)
+DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 1, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
+DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
+DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
+```
 
-
-DF$semdat %<>% rename(x1 = kp17_waw, x2 = kp18_waw, x3 = kp19_waw,
-                      y1 = kp17_170, y2 = kp18_170, y3 = kp19_170)
+## Rename Vars for SEM
+```{r}
+DF$semdat %<>% rename(x1 = kp17_170, x2 = kp18_170, x3 = kp19_170,
+                      y1 = kp17_waw, y2 = kp18_waw, y3 = kp19_waw)
 DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
 ```
 
 
 
 ## Check Correlations
+::: {.callout-important}
+x(n) steht für die Variablen der Wahlbeteilgungsabsicht der Wellen 17-19<br>
+y(n) steht für die Variablen der Wahlwerbungskontakte der Wellen 17-19<br>
+Operationalisierung analog zu Schulz 2022,
+:::
+
 ```{r}
-DF$semdat %>% psych::cor.plot(.,stars = T)
+# DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
 DF$semdat %>% psych::cor.plot(.,stars = T)
 
 # DF$semdat_long %>% select(!"Welle") %>% 
@@ -169,24 +197,12 @@ DF$semdat %>% select(contains(c("y"))) %>%
 
 
 # SEM
+::: {.callout-important}
+Lx(n) steht für die (latenten) Variablen der Wahlbeteilgungsabsicht der Wellen 17-19<br>
+Ly(n) steht für die (latenten) Variablen der Wahlwerbungskontakte der Wellen 17-19<br>
+Operationalisierung analog zu Schulz 2022,
+:::
 
-## CLPM fixed
-```{r}
-#| warning: false
-tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_LC, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
-  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
-plot(DF$cl_graph)
-toc()
-```
 
 ## CLPM free
 ```{r}
@@ -206,42 +222,6 @@ plot(DF$cl_graph)
 toc()
 ```
 
-## CLPM Latent 2 Lag
-```{r}
-#| warning: false
-tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L2, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
-  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
-plot(DF$cl_graph)
-toc()
-```
-
-## RI-CLPM fixed
-```{r}
-#| warning: false
-tic()
-DF$ric.fit <- lavaan::sem(DF$riclpmC, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
-  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
-plot(DF$ric_graph)
-toc()
-```
-
 
 ## RI-CLPM free
 ```{r}
@@ -254,9 +234,9 @@ broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.doubl
   flextable() %>% theme_zebra() %>% 
   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
 plot(DF$ric_graph)
 toc()
 ```
