@@ -17,6 +17,8 @@ format:
     code-overflow: wrap
     html-math-method: katex
     self-contained: true
+    fig-width: 8
+    fig-height: 6
 execute: 
   echo: false
   eval: true
@@ -43,7 +45,6 @@ options(
 
 # setting a seed
 set.seed(42)
-rm(list= ls()) # start clean ####
 ```
 
 ## Load Packages
@@ -76,7 +77,7 @@ source(here("script/models.R"))
 
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp5_421","kp6_421","kp7_421","kp5_170","kp6_170","kp7_170")) &
+DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp5_421","kp6_421","kp7_421","kp5_170","kp6_170","kp7_170","kpx_2290s")) &
                                    !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y"))
 
 DF$semdat %<>% mutate(across(ends_with("_170"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;6=1;else = copy")),
@@ -84,6 +85,10 @@ DF$semdat %<>% mutate(across(ends_with("_170"), ~rec(., rec = "-99,-97,-95,-93,-
                      across(ends_with("_170"), ~rec(., rec = "rev")))
 DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp5") & ends_with("a"))
 
+DF$semdat %<>% mutate(alter = rec(kpx_2290s, rec ="1955 und frueher = 1955;else = copy"),
+                      alter = as.numeric(alter),
+                      alter = 2017- alter)
+DF$semdat %<>% mutate(age_grp = dicho(alter, dich.by = 29))
 ```
 
 
@@ -92,6 +97,7 @@ DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp5") & ends_
 
 ```{r}
 #| include: false
+#| eval: false
 # tic()
 DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
@@ -101,6 +107,7 @@ DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 ## Preliminary Analyse {quarto:ignore=true}
 ```{r}
 #| include: false
+#| eval: false
 parameters::n_factors(DF$ws21_efa) %>% knitr::kable(.,format= 'markdown')
 DF$ws21_efa %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 DF$ws21_efa %>% psych::cor.plot(.,stars = T)
@@ -141,7 +148,10 @@ for (j in seq_along(wellen)) {
   DF$reli[[reli_obj]] = DF$semdat %>% select(contains("_ww") & starts_with(wellen[j])) %>% psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
 }
 DF$reli %>% map(., ~gt(.$total) %>% gt_theme_nytimes())
-DF$reli %>% map(., ~rownames_to_column(.$alpha.drop, "ITEM") %>% gt() %>% gt_theme_nytimes())
+DF$reli %>% map(., ~rownames_to_column(.$alpha.drop, "ITEM") %>% gt() %>% 
+                  tab_style(style = cell_text(color = "red", weight = "bold"), locations = cells_body(columns = ITEM, rows = std.alpha > 0.7 )))
+
+
 ```
 
 
@@ -163,6 +173,7 @@ Operationalisierung analog zu Schulz 2022,
 :::
 
 ```{r}
+#| include: false
 DF$wsdat %>% psych::cor.plot(.,stars = T)
 ```
 
@@ -174,25 +185,33 @@ DF$semdat %>% psych::cor.plot(.,stars = T)
 
 ## Check ICC Schulz
 ```{r}
+#| include: false
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
-cat("Wahlabsicht")
 DF$wsdat %>% select(contains(c("x"))) %>% 
                          irr::icc()
-cat("Wahlwerbung")
+```
+Wahlwerbungskontakte
+```{r}
+#| include: false
 DF$wsdat %>% select(contains(c("y"))) %>% 
                          irr::icc()
 ```
 
 ## Check ICC All cases
+Wahlbeteiligungsabsicht
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
-cat("Wahlabsicht")
 DF$semdat %>% select(contains(c("x"))) %>% 
                          irr::icc()
-cat("Wahlwerbung")
+```
+Wahlwerbungskontakte
+```{r}
 DF$semdat %>% select(contains(c("y"))) %>% 
                          irr::icc()
 ```
+
+
+
 
 
 # SEM
@@ -205,14 +224,35 @@ Operationalisierung analog zu Schulz 2022,
 ## CLPM free MuK Schulz
 ```{r}
 #| warning: false
+#| include: false
+#| eval: false
 tic()
 DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$wsdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$sem.fit) %>% 
   select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
-  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+  gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
 broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+toc()
+```
+
+## CLPM free All cases listwise
+```{r}
+#| warning: false
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$sem.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
   fmt_number(decimals = 3) %>% gt_theme_nytimes()
 DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
@@ -225,6 +265,8 @@ toc()
 ## RI-CLPM MuK Schulz
 ```{r}
 #| warning: false
+#| include: false
+#| eval: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$wsdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$ric.fit) %>% 
@@ -232,7 +274,8 @@ broom::glance(DF$ric.fit) %>%
   gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
 broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  tab_style(style = cell_fill(color = "lightgreen"),
+            locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
   fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
@@ -252,7 +295,8 @@ broom::glance(DF$ric.fit) %>%
   gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
 broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  tab_style(style = cell_fill(color = "lightgreen"),
+            locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
   fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
@@ -265,6 +309,8 @@ toc()
 ## RI-CLPM All Cases Missings ML-estimated
 ```{r}
 #| warning: false
+#| include: false
+#| eval: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$ric.fit) %>%
@@ -272,7 +318,8 @@ broom::glance(DF$ric.fit) %>%
   gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
 broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  tab_style(style = cell_fill(color = "lightgreen"),
+            locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
   fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
