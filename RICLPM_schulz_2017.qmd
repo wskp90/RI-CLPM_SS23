@@ -24,11 +24,9 @@ execute:
 editor_options: 
   chunk_output_type: console
 ---
-
-# Session Setup
-
+::: {.hidden}
+# Session Setup  {.unnumbered .unlisted}
 ## Global settings & Notes
-
 ```{r}
 rm(list= ls()) # start clean ####
 # show chunk outputs in R-Markdown
@@ -45,12 +43,12 @@ options(
 
 # setting a seed
 set.seed(42)
+rm(list= ls()) # start clean ####
 ```
 
 ## Load Packages
 
 ```{r}
-rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
@@ -58,24 +56,24 @@ pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
 ```
 
 ## Prepare Lists
-
 ```{r}
 DF = list()
 ```
+:::
 
+
+# Prepare Analysis
 ## Load Data
 
 ```{r}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
-DF$za6804v7 = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6804_v7.qs"))
+# DF$za6804v7 = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6804_v7.qs"))
 source(here("script/models.R"))
 # toc()
 ```
 
-
-# Prepare Analysis
 ## Select Vars
 ```{r}
 DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp5_421","kp6_421","kp7_421","kp5_170","kp6_170","kp7_170")) &
@@ -209,12 +207,13 @@ Operationalisierung analog zu Schulz 2022,
 #| warning: false
 tic()
 DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$wsdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+broom::glance(DF$sem.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
 DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
@@ -228,12 +227,13 @@ toc()
 #| warning: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$wsdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
@@ -247,12 +247,13 @@ toc()
 #| warning: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
@@ -266,12 +267,13 @@ toc()
 #| warning: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% mutate(across(where(is.double), round, 3)) %>% gt()
-broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+broom::glance(DF$ric.fit) %>%
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
 RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
