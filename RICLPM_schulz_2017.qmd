@@ -84,13 +84,14 @@ DF$semdat %<>% mutate(across(ends_with("_170"), ~rec(., rec = "-99,-97,-95,-93,-
                      across(contains("_421"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy")),
                      across(ends_with("_170"), ~rec(., rec = "rev")),
                      across(ends_with("_010"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy")))
-DF$semdat %<>% mutate(across(ends_with("_010"), ~dicho(., dich.by = 2)))
+# DF$semdat %<>% mutate(across(ends_with("_010"), ~dicho(., dich.by = 2)))
 DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp5") & ends_with("a"))
 
 DF$semdat %<>% mutate(alter = rec(kpx_2290s, rec ="1955 und frueher = 1955;else = copy"),
                       alter = as.numeric(alter),
                       alter = 2017- alter)
 DF$semdat %<>% mutate(grp_age = cut(alter, breaks = c(0,29, Inf), labels = c("genZ", "Boomer")))
+DF$semdat %<>% mutate(grp_polint = cut(kp5_010, breaks = c(0,2, Inf), labels = c("hohes polInt", "geringes PolInt")))
 
 # DF$semdat %<>% mutate(grp_age = dicho(alter, dich.by = 29))
 ```
@@ -251,7 +252,7 @@ toc()
 ```{r}
 #| warning: false
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "kp5_010")
+DF$sem.fit <- lavaan::sem(DF$clpm_LG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
 broom::glance(DF$sem.fit) %>% 
   select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method,ngroups)) %>% 
   gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
@@ -314,7 +315,7 @@ toc()
 ```{r}
 #| warning: false
 tic()
-DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
+DF$ric.fit <- lavaan::sem(DF$riclpmG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
 broom::glance(DF$ric.fit) %>% 
   select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
   gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
@@ -323,6 +324,10 @@ broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>%
   fmt_number(decimals = 2) %>% 
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>% 
   gt_theme_nytimes()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
 toc()
 ```
 

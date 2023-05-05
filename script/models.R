@@ -38,6 +38,29 @@ Lx2 ~ sp11*Lx1 + cl11*Ly1
 Ly3 ~ sp22*Ly2 + cl22*Lx2
 Ly2 ~ sp21*Ly1 + cl21*Lx1
 '
+## CLPModell 3 Wellen unconstrained for Groups ####
+DF$clpm_LG <-
+  '
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+
+#Resiudal Correlation
+Lx1 ~~ Ly1
+Lx2 ~~ Ly2
+Lx3 ~~ Ly3
+
+#Stability & Crosslagged Paths
+Lx3 ~ Lx2 + Ly2
+Lx2 ~ Lx1 + Ly1
+
+Ly3 ~ Ly2 + Lx2
+Ly2 ~ Ly1 + Lx1
+'
 ## CLPModell 3 Wellen constrained ####
 DF$clpm_LC <-
   '
@@ -353,6 +376,48 @@ Lx2 ~ sp05*Lx1 + cl09*Ly1
 
 Ly3 ~ sp08*Ly2 + cl12*Lx2
 Ly2 ~ sp07*Ly1 + cl11*Lx1
+'
+## RI-CLPModell 3 Wellen uncontsrained for Groups ####
+DF$riclpmG <-
+  '
+#RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3
+RIy =~ 1*y1 + 1*y2 + 1*y3
+
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+
+#VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+
+#LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+
+#CORRELATIONS
+Lx3 ~~ Ly3
+Lx2 ~~ Ly2
+Lx1 ~~ Ly1
+RIx ~~ RIy
+
+#Stability & LAGGED EFFECTS
+Lx3 ~ Lx2 + Ly2
+Lx2 ~ Lx1 + Ly1
+
+Ly3 ~ Ly2 + Lx2
+Ly2 ~ Ly1 + Lx1
 '
 ## RI-CLPModell 3 Wellen contsrained ####
 DF$riclpmC <-
