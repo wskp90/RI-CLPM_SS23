@@ -77,18 +77,22 @@ source(here("script/models.R"))
 
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp5_421","kp6_421","kp7_421","kp5_170","kp6_170","kp7_170","kpx_2290s")) &
+DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp5_421","kp6_421","kp7_421","kp5_170","kp6_170","kp7_170","kpx_2290s","kp5_010","kp6_010","kp7_010")) &
                                    !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y"))
 
 DF$semdat %<>% mutate(across(ends_with("_170"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;6=1;else = copy")),
                      across(contains("_421"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy")),
-                     across(ends_with("_170"), ~rec(., rec = "rev")))
+                     across(ends_with("_170"), ~rec(., rec = "rev")),
+                     across(ends_with("_010"), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy")))
+DF$semdat %<>% mutate(across(ends_with("_010"), ~dicho(., dich.by = 2)))
 DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp5") & ends_with("a"))
 
 DF$semdat %<>% mutate(alter = rec(kpx_2290s, rec ="1955 und frueher = 1955;else = copy"),
                       alter = as.numeric(alter),
                       alter = 2017- alter)
-DF$semdat %<>% mutate(age_grp = dicho(alter, dich.by = 29))
+DF$semdat %<>% mutate(grp_age = cut(alter, breaks = c(0,29, Inf), labels = c("genZ", "Boomer")))
+
+# DF$semdat %<>% mutate(grp_age = dicho(alter, dich.by = 29))
 ```
 
 
@@ -161,7 +165,7 @@ DF$semdat %<>% rename(x1 = kp5_170, x2 = kp6_170, x3 = kp7_170,
                      y1 = kp5_waw, y2 = kp6_waw, y3 = kp7_waw)
 DF$wsdat = DF$semdat %>% filter(n_participation == 9) # Filter W. Schulz
 DF$wsdat %<>% select(starts_with(c("x","y")))
-DF$semdat %<>% select(starts_with(c("x","y")))
+DF$semdat %<>% select(starts_with(c("x","y","grp","kp5_010")))
 ```
 
 
@@ -179,7 +183,7 @@ DF$wsdat %>% psych::cor.plot(.,stars = T)
 
 ## Check Correlations All Cases
 ```{r}
-DF$semdat %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% select(starts_with(c("x","y"))) %>% psych::cor.plot(.,stars = T)
 ```
 
 
@@ -214,6 +218,7 @@ DF$semdat %>% select(contains(c("y"))) %>%
 
 
 
+
 # SEM
 ::: {.callout-important}
 Lx(n) steht für die latenten Variablen der Wahlbeteiligungsabsicht der Wellen 5-7<br>
@@ -242,18 +247,19 @@ plot(DF$cl_graph)
 toc()
 ```
 
-## CLPM free All cases listwise
+## CLPM free All cases listwise, GRP_age
 ```{r}
 #| warning: false
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
+DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "kp5_010")
 broom::glance(DF$sem.fit) %>% 
-  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method,ngroups)) %>% 
   gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
 broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
-  fmt_number(decimals = 3) %>% gt_theme_nytimes()
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
+  fmt_number(decimals = 3) %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>% 
+  gt_theme_nytimes()
 DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
@@ -304,7 +310,21 @@ DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({lab
 plot(DF$ric_graph)
 toc()
 ```
-
+# RI-CLPM All Cases listwise GRP_Age
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
+  fmt_number(decimals = 2) %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>% 
+  gt_theme_nytimes()
+toc()
+```
 
 ## RI-CLPM All Cases Missings ML-estimated
 ```{r}
