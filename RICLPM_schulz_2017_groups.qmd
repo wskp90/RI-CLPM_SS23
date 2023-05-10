@@ -67,7 +67,7 @@ DF = list()
 ## Load Data
 
 ```{r}
-DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
 source(here("script/models.R"))
 # toc()
 ```

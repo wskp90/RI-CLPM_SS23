@@ -66,6 +66,7 @@ spd = list()
 
 ```{r}
 tic()
+spd$za6838v6 = read_stata(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_allwaves_sA_v6-0-0.dta"),drop.labels = T)
 spd$za6804v7 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6804/ZA6804_de_v7-0-0.sav"),drop.labels = T)
 spd$za6838w9 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w1to9_sA_v5-0-0.sav"),drop.labels = T)
 spd$za6838w10 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_w10_sA_v5-0-0.sav"),drop.labels = T)
@@ -128,4 +129,5 @@ toc()
 ```{r}
 qsave(za6838kum, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
 qsave(spd$za6804v7, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6804_v7.qs"))
+qsave(spd$za6838v6, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
 ```
