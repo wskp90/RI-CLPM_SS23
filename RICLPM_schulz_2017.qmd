@@ -109,7 +109,7 @@ DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 # toc()
 ```
 
-## Preliminary Analyse {quarto:ignore=true}
+## Preliminary Analysis {quarto:ignore=true}
 ```{r}
 #| include: false
 #| eval: false
@@ -311,7 +311,7 @@ DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({lab
 plot(DF$ric_graph)
 toc()
 ```
-# RI-CLPM All Cases listwise GRP_Age
+## RI-CLPM All Cases listwise GRP_Age
 ```{r}
 #| warning: false
 tic()

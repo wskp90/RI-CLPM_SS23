@@ -178,7 +178,8 @@ Lx(n) steht für die latenten Variablen der Wahlbeteiligungsabsicht der Wellen 5
 Ly(n) steht für die latenten Variablen der Wahlwerbungskontakte der Wellen 5-7<br>
 Operationalisierung analog zu Schulz 2022,
 :::
-## CLPM free All cases listwise, GRP_age
+## CLPM
+### CLPM free All cases listwise, GRP_age
 ```{r}
 #| warning: false
 tic()
@@ -198,7 +199,7 @@ DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({l
 plot(DF$cl_graph)
 toc()
 ```
-## CLPM free All cases listwise, GRP Politisches Interesse
+### CLPM free All cases listwise, GRP Politisches Interesse
 ```{r}
 #| warning: false
 tic()
@@ -217,8 +218,8 @@ DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({l
 plot(DF$cl_graph)
 toc()
 ```
-
-# RI-CLPM All Cases listwise GRP_Age
+## RI-CLPM
+### RI-CLPM All Cases listwise GRP_Age
 ```{r}
 #| warning: false
 tic()
@@ -238,7 +239,7 @@ plot(DF$ric_graph)
 toc()
 ```
 
-# RI-CLPM All Cases listwise GRP Politisches Interesse
+### RI-CLPM All Cases listwise GRP Politisches Interesse
 ```{r}
 #| warning: false
 tic()

@@ -52,7 +52,7 @@ set.seed(42)
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,kableExtra,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
                psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation)
 ```
@@ -63,27 +63,43 @@ pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,kableExtra,
 DF = list()
 ```
 
-## Load Data
-
-```{r}
-# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
-# tic()
-DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
-source(here("script/models.R"))
-# toc()
-```
 
 
 # Prepare Analysis
+
+## Load Data
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+source(here("script/models.R"))
+# toc()
+```
 ## Select Vars
 ```{r}
+
+
 DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
 # head(DF$semdat)
+
+DF$semdat = DF$orgdat %>% select(starts_with(c("n_participation","kp17_421","kp18_421","kp19_421","kp17_170","kp18_170","kp19_170","kpx_2290s","kp17_010","kp18_010","kp19_010")) &
+                                   !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y"))
+
+
+```
+
+## Recode Vars
+```{r}
 DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;6=1; else = copy")))
 DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
 DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends_with("a"))
-```
 
+DF$semdat %<>% mutate(alter = rec(kpx_2290s, rec ="1955 und frueher = 1955;else = copy"),
+                      alter = as.numeric(alter),
+                      alter = 2017- alter)
+DF$semdat %<>% mutate(grp_age = cut(alter, breaks = c(0,29, Inf), labels = c("genZ", "Boomer")))
+DF$semdat %<>% mutate(grp_polint = cut(kp17_010, breaks = c(0,2, Inf), labels = c("hohes polInt", "geringes PolInt")))
+```
 
 ::: {.hidden}
 ## Check FRQ
@@ -91,7 +107,7 @@ DF$ws21_efa = DF$semdat %>% select(contains("_421") & starts_with("kp17") & ends
 ```{r}
 #| include: false
 # tic()
-DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+# DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
 # toc()
 ```
@@ -133,12 +149,26 @@ for (i in 17:19) {
 
 ## Check reliability
 ```{r}
-DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
-  base::summary() %>% kbl() %>% kable_styling() # RDI
-DF$semdat %>% select(contains("_ww") & starts_with("kp18")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
-  base::summary() %>% kbl() %>% kable_styling() # RDI
-DF$semdat %>% select(contains("_ww") & starts_with("kp19")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
-  base::summary() %>% kbl() %>% kable_styling() # RDI
+#| results: asis
+
+# DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+#   base::summary() %>% kbl() %>% kable_styling() # RDI
+# DF$semdat %>% select(contains("_ww") & starts_with("kp18")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+#   base::summary() %>% kbl() %>% kable_styling() # RDI
+# DF$semdat %>% select(contains("_ww") & starts_with("kp19")) %>% psych::alpha(., na.rm = T, check.keys=TRUE, warnings = F) %>% 
+#   base::summary() %>% kbl() %>% kable_styling() # RDI
+
+
+wellen <- c("kp17", "kp18", "kp19")
+for (j in seq_along(wellen)) {
+  reli_obj <- paste0("reli_", wellen[j])
+  DF$reli[[reli_obj]] = DF$semdat %>% select(contains("_ww") & starts_with(wellen[j])) %>% psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
+}
+DF$reli %>% map(., ~gt(.$total) %>% gt_theme_nytimes())
+DF$reli %>% map(., ~rownames_to_column(.$alpha.drop, "ITEM") %>% gt() %>% 
+                  tab_style(style = cell_text(color = "red", weight = "bold"), locations = cells_body(columns = ITEM, rows = std.alpha > 0.7 )))
+
+
 ```
 
 ::: {.hidden}
@@ -146,20 +176,22 @@ DF$semdat %>% select(contains("_ww") & starts_with("kp19")) %>% psych::alpha(., 
 ```{r}
 #| include: false
 DF$ws21_efa = DF$semdat %>% select(contains("_ww") & starts_with("kp17")) %>% na.omit()
-parameters::n_factors(DF$ws21_efa) %>% knitr::kable(.,format= 'markdown')
+parameters::n_factors(DF$ws21_efa) %>% gt() %>% gt_theme_nytimes()
 DF$ws21_efa %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 DF$ws21_efa %>% psych::cor.plot(.,stars = T)
-DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 1, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
-DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
-DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
+DF$ws21_efa.fa = fa(DF$ws21_efa, nfactors = 2, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
+DF$ws21_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% gt () %>% gt_theme_nytimes()
+# DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
 ```
 :::
 
-## Rename & delete Vars for SEM
+## Rename, select & delete VARS
 ```{r}
 DF$semdat %<>% rename(x1 = kp17_170, x2 = kp18_170, x3 = kp19_170,
-                      y1 = kp17_waw, y2 = kp18_waw, y3 = kp19_waw)
-DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
+                     y1 = kp17_waw, y2 = kp18_waw, y3 = kp19_waw)
+DF$wsdat = DF$semdat %>% filter(n_participation == 9) # Filter W. Schulz
+DF$wsdat %<>% select(starts_with(c("x","y")))
+DF$semdat %<>% select(starts_with(c("x","y","grp")))
 ```
 
 
@@ -173,7 +205,7 @@ Operationalisierung analog zu Schulz 2022,
 
 ```{r}
 # DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
-DF$semdat %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% select(starts_with(c("x","y"))) %>% psych::cor.plot(.,stars = T)
 
 # DF$semdat_long %>% select(!"Welle") %>% 
 #   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
@@ -190,35 +222,59 @@ DF$semdat %>% psych::cor.plot(.,stars = T)
 ```
 
 ## Check ICC
+Wahlbeteiligungsabsicht
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
-
 DF$semdat %>% select(contains(c("x"))) %>% 
                          irr::icc()
+```
+Wahlwerbungskontakte
+```{r}
 DF$semdat %>% select(contains(c("y"))) %>% 
                          irr::icc()
 ```
 
 
 # SEM
+## CLPM
 ::: {.callout-important}
-Lx(n) steht für die (latenten) Variablen der Wahlbeteilgungsabsicht der Wellen 17-19<br>
+Lx(n) steht für die (latenten) Variablen der Wahlbeteiligungsabsicht der Wellen 17-19<br>
 Ly(n) steht für die (latenten) Variablen der Wahlwerbungskontakte der Wellen 17-19<br>
 Operationalisierung analog zu Schulz 2022,
 :::
-
-
-## CLPM free
+### CLPM free
 ```{r}
 #| warning: false
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$sem.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method,ngroups)) %>% 
+  gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
+  select(., c(term,label, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  fmt_number(decimals = 3) %>% 
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>% 
+  gt_theme_nytimes()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+toc()
+```
+### CLPM free All cases listwise, GRP_age
+```{r}
+#| warning: false
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_LG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
+broom::glance(DF$sem.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method,ngroups)) %>% 
+  gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>%
+  gt(groupname_col = "group") %>%
+  fmt_number(decimals = 3) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
 DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
@@ -226,29 +282,92 @@ plot(DF$cl_graph)
 toc()
 ```
 
+### CLPM free All cases listwise, GRP Politisches Interesse
+```{r}
+#| warning: false
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_LG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_polint")
+broom::glance(DF$sem.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method,ngroups)) %>% 
+  gt()%>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$sem.fit) %>% filter(., op =="~") %>% 
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
+  fmt_number(decimals = 3) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+toc()
+```
 
-## RI-CLPM free
+## RI-CLPM
+### RI-CLPM free
+::: {.callout-important}
+Lx(n) steht für die (latenten) Variablen der Wahlbeteiligungsabsicht der Wellen 17-19<br>
+Ly(n) steht für die (latenten) Variablen der Wahlwerbungskontakte der Wellen 17-19<br>
+Operationalisierung analog zu Schulz 2022,
+:::
 ```{r}
 #| warning: false
 tic()
 DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T)
-broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
-broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% mutate(across(where(is.double), round, 3)) %>% 
-  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
-  flextable() %>% theme_zebra() %>% 
-  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
-  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
-DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt() %>% 
+  tab_style(style = cell_fill(color = "lightgreen"),
+            locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  fmt_number(decimals = 3) %>% gt_theme_nytimes()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$ric_graph = prepare_graph(DF$ric.fit, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
 plot(DF$ric_graph)
 toc()
 ```
 
-::: {.hidden}
-# Save DATA, if neccessary {.unnumbered .unlisted}
-```{r, eval=FALSE}
-#| include: false
-# DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
+### RI-CLPM All Cases listwise GRP_Age
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpmG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_age")
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
+  fmt_number(decimals = 2) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+
+toc()
 ```
-:::
+```{r}
+#| column: page
+plot(DF$ric_graph)
+```
+
+### RI-CLPM All Cases listwise GRP Politisches Interesse
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpmG, data=DF$semdat, missing="listwise", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "grp_polint")
+broom::glance(DF$ric.fit) %>% 
+  select(., c(cfi,tli,agfi,rmsea,srmr,estimator,nobs,norig,missing_method)) %>% 
+  gt() %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(., op =="~") %>% 
+  select(., c(group,term, label, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
+  fmt_number(decimals = 2) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+toc()
+```
