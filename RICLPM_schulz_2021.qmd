@@ -35,13 +35,13 @@ rm(list= ls()) # start clean ####
 knitr::opts_chunk$set(echo = TRUE)
 
 # global settings
-options(
-  scipen = 999, # deactivate scientific notation
-  digits = 3, # activate the required number of decimal places
-  max.print = 1000000,
-  tibble.print_max = 100000,
-  tibble.print_min = 100000
-)
+# options(
+#   scipen = 999, # deactivate scientific notation
+#   digits = 3, # activate the required number of decimal places
+#   max.print = 1000000,
+#   tibble.print_max = 100000,
+#   tibble.print_min = 100000
+# )
 
 # setting a seed
 set.seed(42)
@@ -164,8 +164,9 @@ for (j in seq_along(wellen)) {
   reli_obj <- paste0("reli_", wellen[j])
   DF$reli[[reli_obj]] = DF$semdat %>% select(contains("_ww") & starts_with(wellen[j])) %>% psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
 }
-DF$reli %>% map(., ~gt(.$total) %>% gt_theme_nytimes())
+DF$reli %>% map(., ~gt(.$total) %>% fmt_number(decimals = 2) %>% gt_theme_nytimes())
 DF$reli %>% map(., ~rownames_to_column(.$alpha.drop, "ITEM") %>% gt() %>% 
+                  fmt_number(decimals = 2) %>% 
                   tab_style(style = cell_text(color = "red", weight = "bold"), locations = cells_body(columns = ITEM, rows = std.alpha > 0.7 )))
 
 
@@ -206,7 +207,7 @@ Operationalisierung analog zu Schulz 2022,
 ```{r}
 # DF$semdat = DF$semdat %>% select(starts_with(c("x","y")))
 DF$semdat %>% select(starts_with(c("x","y"))) %>% psych::cor.plot(.,stars = T)
-
+DF$semdat %>% select(c("x1","x2","y1","y2")) %>% na.omit() %>% ppcor::pcor(., method = "pearson")
 # DF$semdat_long %>% select(!"Welle") %>% 
 #   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
 #   drop_na() %>% 
