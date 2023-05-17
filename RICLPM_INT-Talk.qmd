@@ -1,0 +1,165 @@
+---
+title: "RICLPM GLES Panel"
+subtitle: "Internet & Gespräche"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+#| label: Global settings & Note
+
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/models.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+## Select Vars
+```{r}
+DF$semdat_2 = DF$orgdat %>% select(contains(c("_1600","_1933")) & !ends_with("flag") & starts_with(c("kp17","kp18","kp19")))
+```
+
+
+
+## Check FRQ
+
+```{r}
+# tic()
+
+DF$semdat_2 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+# toc()
+```
+
+
+## Check Correlations
+```{r}
+DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA;else = copy"))) %>%
+  psych::cor.plot(.,stars = T)
+DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>%
+  psych::cor.plot(.,stars = T)
+
+DF$semdat_2 %>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy"))) %>% 
+  psych::corr.test()
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+DF$semdat_2 %>% select(contains(c("_1600"))) %>% 
+                         mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA; else = copy"))) %>% irr::icc()
+DF$semdat_2 %>% select(contains(c("_1933"))) %>% 
+                         mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93=NA; else = copy"))) %>% irr::icc()
+
+```
+
+
+# SEM
+## Prepare VARS
+```{r}
+DF$semdat_2 %<>% mutate(across(everything(), ~rec(., rec = "-99,-95,-93=NA;-97=1;else = copy")))
+names(DF$semdat_2)<- c("m1", "m2", "m3", "w1", "w2", "w3")
+```
+
+
+## CLPM Latent
+```{r}
+DF$int_smL.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat_2, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$int_smL.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$int_smL.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$int_smL.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("BTW21 Internet/Gespräche")
+```
+
+## RI-CLPM
+```{r}
+#| warning: false
+tic()
+DF$int_smR.fit <- lavaan::sem(DF$riclpm, data=DF$semdat_2, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = "default")
+broom::glance(DF$int_smR.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$int_smR.fit) %>% filter(., label!="") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+semPaths(DF$int_smR.fit, what = "std", whatLabels="std", layout="tree2", intercepts = F, residuals = T, structural = T, 
+         curvePivot = T, style="mx", rotation = 2, fade = F, edge.label.cex=0.7, edge.label.position = 0.4)
+title("BTW21 Internet/Social Media")
+toc()
+```
+
+
+
+## Save DATA, if neccessary
+```{r}
+#| include: false
+# DF %>% qsave(., file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/text.qs"))
+```

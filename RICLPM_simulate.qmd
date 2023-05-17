@@ -1,0 +1,384 @@
+---
+title: "RI-CLPM and the like"
+subtitle: "Simulated Data"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(123)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+pacman::p_load_gh("jsakaluk/GCLM", "jflournoy/riclpmr")
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Simulate Data
+
+```{r}
+source(here("script/models.R"))
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$var_groups2 <- list(
+  x=c("x1",  "x2",  "x3", "x4", "x5", "x6"),
+  y=c("y1",  "y2",  "y3", "y4", "y5", "y6"))
+
+DF$population.model <- ' f1 =~ 1.2*x1 + 3*x2 + 2.5*x3 + 2*x4 + 1.5*x5 + 1*x6
+                      f2 =~ 0.8*y1 + 2.8*y2 + 2.3*y3 + 1.8*y4 + 1.3*y5 + 0.8*y6;
+                      f1 ~ 0.2*f2'
+                      # x1 ~ 0.6*y2; x2 ~ 0.4*y3; x3 ~ 0.6*y4; x4 ~ 0.4*y5; x5 ~ 0.6*y6
+                      # y1 ~ 0.3*x2; y2 ~ 0.5*x3; y3 ~ 0.3*x4; y4 ~ 0.5*x5; y5 ~ 0.3*x6'
+                    
+# DF$cfadat = lavaan::simulateData(population.model, model.type = "cfa",sample.nobs=1000, orthogonal = F)
+# DF$semdat = lavaan::simulateData(DF$population.model, model.type = "sem",sample.nobs=1000, orthogonal = F, seed = 666)
+# DF$RImodel2_t6 <- riclpmr::riclpm_text(DF$var_groups2, constrain_over_waves = F)
+# DF$semdat = riclpmr::simriclpm(riclpmModel = DF$RImodel2_t6, sample.nobs = 1000)
+# riclpmr::simriclpm(riclpmModel = DF$RImodel2_t6, sample.nobs = 10, seed = 123)
+
+DF$semdat = lavaan::simulateData(DF$riSIM5, sample.nobs = 2000,
+               int.ov.free = F,
+               int.lv.free = F,
+               auto.fix.first = F,
+               auto.fix.single = F,
+               auto.cov.lv.x = T,
+               auto.cov.y = T,
+               auto.var = T,
+               seed = 123)
+
+# DF$grodat = lavaan::simulateData(population.model, model.type = "growth",sample.nobs=1000, orthogonal = F)
+# toc()
+```
+
+
+# Prepare Analysis
+
+## Check FRQ
+
+```{r}
+#| include: false
+# tic()
+# DF$cfadat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+# DF$grodat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+
+# toc()
+```
+
+
+## Check Correlations
+```{r}
+#| include: false
+# DF$cfadat %>% psych::cor.plot(.,stars = T)
+DF$semdat %>% psych::cor.plot(.,stars = T)
+# DF$grodat %>% psych::cor.plot(.,stars = T)
+
+
+# DF$semdat_1_long %>% select(!"Welle") %>% 
+#   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   drop_na() %>% 
+#   psych::corr.test()
+# DF$semdat_1 %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
+#   gather(key, value) %>% drop_na() %>% 
+#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+#   ggplot(aes(x = value, color = Welle)) +
+#   geom_density(adjust = 1.6) + 
+#   facet_wrap(vars(Var)) + 
+#   theme_classic()
+
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+# DF$cfadat %>% select(contains(c("x"))) %>% irr::icc()
+# DF$cfadat %>% select(contains(c("y"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("x"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("y"))) %>% irr::icc()
+# DF$grodat %>% select(contains(c("x"))) %>% irr::icc()
+# DF$grodat %>% select(contains(c("y"))) %>% irr::icc()
+
+```
+
+
+# SEM
+## CLPM
+### CLPM fixed
+```{r}
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L5C, data=DF$semdat, estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+edges(DF$cl_graph) = edges(DF$cl_graph) %>% 
+  mutate(colour = "black") %>% mutate(colour = replace(colour, from == "Lx2" & to == "Ly3", "blue")) %>% mutate(colour = replace(colour, from == "Ly2" & to == "Lx3", "green")) %>% 
+  mutate(label_size = 3) %>% mutate(label_size = replace(label_size, from == "Lx2" & to == "Ly3", 6)) %>% mutate(label_size = replace(label_size, from == "Ly2" & to == "Lx3", 6)) %>% 
+  mutate(label_fontface = "plain") %>% mutate(label_fontface = replace(label_fontface, from == "Lx2" & to == "Ly3", "bold")) %>% mutate(label_fontface = replace(label_fontface, from == "Ly2" & to == "Lx3", "bold"))
+plot(DF$cl_graph)
+```
+### CLPM free
+```{r}
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+tic()
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+```
+
+### CLPM fixed T3
+```{r}
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_LC, data=DF$semdat, estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+edges(DF$cl_graph) = edges(DF$cl_graph) %>% 
+  mutate(colour = "black") %>% mutate(colour = replace(colour, from == "Lx2" & to == "Ly3", "blue")) %>% mutate(colour = replace(colour, from == "Ly2" & to == "Lx3", "green")) %>% 
+  mutate(label_size = 3) %>% mutate(label_size = replace(label_size, from == "Lx2" & to == "Ly3", 6)) %>% mutate(label_size = replace(label_size, from == "Ly2" & to == "Lx3", 6)) %>% 
+  mutate(label_fontface = "plain") %>% mutate(label_fontface = replace(label_fontface, from == "Lx2" & to == "Ly3", "bold")) %>% mutate(label_fontface = replace(label_fontface, from == "Ly2" & to == "Lx3", "bold"))
+plot(DF$cl_graph)
+```
+
+### CLPM free T3
+```{r}
+tic()
+DF$sem.fit <- lavaan::sem(DF$clpm_L, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+tic()
+broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$sem.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+```
+
+
+## RI-CLPM
+### RI-CLPM fixed
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat,estimator = "MLM", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+edges(DF$ric_graph) = edges(DF$ric_graph) %>% 
+  mutate(colour = "black") %>% mutate(colour = replace(colour, from == "Lx2" & to == "Ly3", "blue")) %>% mutate(colour = replace(colour, from == "Ly2" & to == "Lx3", "green")) %>% 
+  mutate(label_size = 3) %>% mutate(label_size = replace(label_size, from == "Lx2" & to == "Ly3", 6)) %>% mutate(label_size = replace(label_size, from == "Ly2" & to == "Lx3", 6)) %>% 
+  mutate(label_fontface = "plain") %>% mutate(label_fontface = replace(label_fontface, from == "Lx2" & to == "Ly3", "bold")) %>% mutate(label_fontface = replace(label_fontface, from == "Ly2" & to == "Lx3", "bold"))
+plot(DF$ric_graph)
+```
+### RI-CLPM fixed 3
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpmC, data=DF$semdat,estimator = "MLM", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+edges(DF$ric_graph) = edges(DF$ric_graph) %>% 
+  mutate(colour = "black") %>% mutate(colour = replace(colour, from == "Lx2" & to == "Ly3", "blue")) %>% mutate(colour = replace(colour, from == "Ly2" & to == "Lx3", "green")) %>% 
+  mutate(label_size = 3) %>% mutate(label_size = replace(label_size, from == "Lx2" & to == "Ly3", 6)) %>% mutate(label_size = replace(label_size, from == "Ly2" & to == "Lx3", 6)) %>% 
+  mutate(label_fontface = "plain") %>% mutate(label_fontface = replace(label_fontface, from == "Lx2" & to == "Ly3", "bold")) %>% mutate(label_fontface = replace(label_fontface, from == "Ly2" & to == "Lx3", "bold"))
+plot(DF$ric_graph)
+```
+
+
+### RI-CLPM fixed-bootstraped
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm5C, data=DF$semdat, test="bollen.stine", se="bootstrap", bootstrap = 5000)
+toc()
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+# broom::tidy(DF$ric.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>%
+#   select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>%
+#   flextable() %>% theme_zebra() %>%
+#   color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+#   bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+summary(DF$ric.fit, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+# parameterEstimates(DF$ric.fit, boot.ci.type ="bca.simple", level=.95, output="pretty", header=TRUE)
+
+```
+
+
+### RI-CLPM free
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t5_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+```
+
+### RI-CLPM free 3
+```{r}
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$ric.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+
+```
+
+## GCLM
+### Zyphur 5 GCLM2
+```{r}
+tic()
+DF$z_gclmt5.fit<-sem(DF$z_gclmt5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$z_gclmt5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$z_gclmt5.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+
+summary(DF$z_gclmt5.fit, fit.measures = TRUE)
+```
+
+### Usami 5 GCLM1
+```{r}
+tic()
+DF$u_gclmt5.fit<-sem(DF$GCLMT5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$u_gclmt5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$u_gclmt5.fit) %>% filter(., op=="~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+
+summary(DF$u_gclmt5.fit, fit.measures = TRUE)
+```
+
+### Usami 5 GCLM2
+```{r}
+tic()
+DF$u_gclmT5.fit<-sem(DF$GCLM2T5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$u_gclmT5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$u_gclmT5.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+summary(DF$u_gclmT5.fit, fit.measures = TRUE)
+```
+### Sakaluk 5 GCLM
+```{r}
+tic()
+DF$s_gcmlT5.fit<-sem(DF$s_gcmlT5, data=DF$semdat,estimator = "MLR", mimic="Mplus", meanstructure = T)
+toc()
+broom::glance(DF$s_gcmlT5.fit)%>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% mutate(across(where(is.double), round, 3))
+broom::tidy(DF$s_gcmlT5.fit) %>% filter(., op == "~") %>% mutate(across(where(is.double), round, 3)) %>% 
+  select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% 
+  flextable() %>% theme_zebra() %>% 
+  color(., i = ~ p.value < 0.05,j = ~ term + p.value + std.all, color="blue") %>%
+  bold(., i = ~ p.value < 0.05 & op == "~",j = ~ term + p.value + std.all, bold=T) %>% autofit()
+summary(DF$s_gcmlT5.fit, fit.measures = TRUE)
+```
