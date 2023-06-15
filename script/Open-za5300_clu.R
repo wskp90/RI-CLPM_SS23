@@ -1,20 +1,54 @@
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,
-  psych,lm.beta, GPArotation,flextable,semTools,semPlot,lavaan,tidyverse,sjmisc,TAM,Hmisc,here,broom,questionr,codebook,DataExplorer,tidySEM,fs,usethis,cluster)
+  psych,tidyverse,sjmisc,Hmisc,here,broom,usethis,cluster,factoextra,philentropy)
 za5300 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za5300/ZA5300_de_v5-0-2.sav"),drop.labels = T)
 
 
 
-clu_5300 = za5300  %>%  select("q2","q63","q64")
+clu_5300 = za5300  %>%  select("vw_lfdn","q2","q63","q64") %>% mutate(across(c(q2, q63, q64), as.numeric))
 
+
+clu_5300 <- clu_5300 %>% column_to_rownames(var = "vw_lfdn")
+
+
+# df <- df %>% mutate(row_names = rownames(.))
 clu_5300 = clu_5300 %>% na.omit()
+
+clu_5300 = clu_5300 %>% mutate(across(c("q2","q63","q64"), scale))
+
+clu_d1 = daisy(clu_5300, metric = "euclidean", stand = T)
+clu_d2 = distance(clu_5300, method = "squared_euclidean")
+
+hc2 <- agnes(clu_5300, metric = "euclidean",method = "ward", stand = F)
+hc3 =  hclust(clu_d1, method="ward.D2")
+sub_grp <- cutree(hc3, k = 6)
+table(sub_grp)
+clu_5300 = cbind(clu_5300,sub_grp)
+clu_5300 = clu_5300 %>% rownames_to_column(var = "vw_lfdn") 
+clu_5300 = clu_5300 %>% as_data_frame() %>% mutate(across(vw_lfdn, as.numeric))
+
+
+clu_comp = za5300 %>% select("vw_lfdn","q2","q63","q64","CLU6_1","CLU6_2","QCL_1")
+clu_comp = full_join(clu_comp,clu_5300, by = "vw_lfdn")
+
+
+clu_comp %>% group_by(sub_grp,CLU6_1) %>% tally() %>% spread(CLU6_1, n)
+clu_comp %>% group_by(sub_grp,CLU6_2) %>% tally() %>% spread(CLU6_2, n)
+
+
+clu_comp %>% select(c("sub_grp","CLU6_1","CLU6_2","QCL_1")) %>% corr.test(use = "pairwise.complete.obs", method = "spearman")
+
+
+pltree(hc2, cex = 0.6, hang = -1, main = "Dendrogram of agnes") 
+
+fviz_nbclust(clu_5300, FUN = hcut, method = "silhouette")
 
 save(za6804, file = "daten/za6804.Rda")
 rm(list= ls()) # start clean ####
 load(here("daten/za6804.Rda"))
 
-za6804 %>% select(starts_with("kp9_060")) %>% frq()
+za6804 %>% select(starts_with("kp9_060")) %>% summary()
 za6804 = za6804 %>% select(-kp1_5000flag)
 delete.na <- function(DF, n=0) {
   DF[rowSums(is.na(DF)) <= n,]
