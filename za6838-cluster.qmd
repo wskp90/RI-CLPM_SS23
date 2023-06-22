@@ -1,0 +1,91 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "Internet vs Social Media-Nutzung"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+
+
+# Prepare Analysis
+
+## Load Data
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+source(here("script/models.R"))
+# toc()
+```
+## Select Vars
+```{r}
+
+
+DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
+# head(DF$semdat)
+
+DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp17_","kp18_","kp19_")) & ends_with(c("_010","_1090","_1130")) & !contains("flag") & !ends_with("y"))
+```
+
+```{r}
+DF$clu_w17 = DF$semdat  %>%  select("lfdn", ends_with(c("_010","_1090","_1130"))) 
+
+%>% mutate(across(ends_with(c("_010","_1090","_1130")), as.numeric))
+
+%>% 
+  column_to_rownames(var = "lfdn") 
+
+%>% 
+  na.omit()
+
+```
+
