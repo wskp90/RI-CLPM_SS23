@@ -1,0 +1,143 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "Internet vs Social Media-Nutzung"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+
+
+# Prepare Analysis
+
+## Load Data
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+# source(here("script/models.R"))
+# toc()
+```
+## Select Vars
+```{r}
+DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp13_","kp_14_","kp15_","kp16_","kp17_","kp19_","kp20_")) & ends_with(c("_010","_1090","_1130")))
+```
+
+## Recode Vars
+```{r}
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) %>% mutate(across(ends_with("_1090"), ~rec(., rec = "rev"))) %>% column_to_rownames(var = "lfdn")
+```
+## Run Cluster Analysis Sq-Euclid-distance Ward
+```{r}
+DF$gles_wellen <- c(13, 15:17, 19:20)
+DF$pi_names <- c()
+DF$so_names <- c()
+DF$la_names <- c()
+for (i in DF$gles_wellen) {
+  polint <- paste0("kp", i, "_010")
+  sozoec <- paste0("kp", i, "_1090")
+  libaut <- paste0("kp", i, "_1130")
+  
+  cludummy <- DF$semdat %>% select({{ polint }}, {{ sozoec }}, {{ libaut }}) %>% na.omit() %>%
+    hcut(k = 6, stand = TRUE, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+  
+  cluobj <- paste0("hc", i)
+  clusol <- paste0("w", i, "_clu")
+  
+  assign(cluobj, cludummy)
+  assign(clusol, cutree(cludummy, k = 6))
+  
+  fviz_cluster(cludummy)
+  fviz_silhouette(cludummy)
+
+DF$pi_names <- c(DF$pi_names, polint)
+DF$so_names <- c(DF$so_names, sozoec)
+DF$la_names <- c(DF$la_names, libaut)
+}
+```
+## Check ICC
+```{r}
+
+DF$semdat %>% select(paste0(DF$pi_names)) %>% 
+                         irr::icc()
+DF$semdat %>% select(paste0(DF$so_names)) %>% 
+                         irr::icc()
+DF$semdat %>% select(paste0(DF$la_names)) %>% 
+                         irr::icc()
+```
+
+## Compare clusters over time
+```{r}
+#DF$semdat = cbind(DF$semdat,w17_clu,w19_clu)
+#table(DF$semdat$w17_clu , DF$semdat$w19_clu) %>% rcompanion::cramerV()
+#DF$semdat %>% group_by(w17_clu,w19_clu) %>% tally() %>% spread(w19_clu, n)
+
+```
+
+## Describe Clusters
+```{r}
+#DF$semdat %>% group_by(w17_clu) %>% 
+#  summarise(m2 = mean(kp17_010), soec = mean(kp17_1090),autlib = mean(kp17_1130)) %>% 
+#  ggplot(aes(x=w17_clu)) + 
+#           geom_line(aes(y = m2, color = "PolInt")) +
+#           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+#           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+#    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+
+
+#DF$semdat %>% group_by(w19_clu) %>% 
+#  summarise(m2 = mean(kp19_010), soec = mean(kp19_1090),autlib = mean(kp19_1130)) %>% 
+#  ggplot(aes(x=w19_clu)) + 
+#           geom_line(aes(y = m2, color = "PolInt")) +
+#           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+#           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+#    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+```
