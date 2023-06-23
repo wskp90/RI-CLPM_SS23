@@ -86,12 +86,13 @@ for (i in DF$gles_wellen) {
   sozoec <- paste0("kp", i, "_1090")
   libaut <- paste0("kp", i, "_1130")
   
-  cludummy <- DF$semdat %>% select({{ polint }}, {{ sozoec }}, {{ libaut }}) %>% na.omit() %>%
-    hcut(k = 6, stand = TRUE, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+  cludata <- DF$semdat %>% select({{ polint }}, {{ sozoec }}, {{ libaut }}) %>% na.omit()
+  cludummy <- cludata %>% hcut(k = 6, stand = TRUE, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
   
   cluobj <- paste0("hc", i)
   clusol <- paste0("w", i, "_clu")
-  
+  # cludat <- paste0("dat", i)
+  assign <- (cludat, cludata)
   assign(cluobj, cludummy)
   assign(clusol, cutree(cludummy, k = 6))
   
