@@ -45,7 +45,7 @@ rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra)
+               psych,easystats,irr,broom,factoextra)
 ```
 
 ## Prepare Lists
@@ -73,37 +73,63 @@ DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp13_","kp_14_","kp15_",
 
 ## Recode Vars
 ```{r}
-DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) %>% mutate(across(ends_with("_1090"), ~rec(., rec = "rev"))) %>% column_to_rownames(var = "lfdn")
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) %>% mutate(across(ends_with("_1090"), ~rec(., rec = "rev")))
+DF$cludat = DF$semdat %>% column_to_rownames(var = "lfdn")
 ```
+
+
+
+
 ## Run Cluster Analysis Sq-Euclid-distance Ward
 ```{r}
 DF$gles_wellen <- c(13, 15:17, 19:20)
-DF$pi_names <- c()
-DF$so_names <- c()
-DF$la_names <- c()
+DF$pi_names <- character()
+DF$so_names <- character()
+DF$la_names <- character()
+# plot_list <- list()
+
+
 for (i in DF$gles_wellen) {
   polint <- paste0("kp", i, "_010")
   sozoec <- paste0("kp", i, "_1090")
   libaut <- paste0("kp", i, "_1130")
   
-  cludata <- DF$semdat %>% select({{ polint }}, {{ sozoec }}, {{ libaut }}) %>% na.omit()
+  cludata <- DF$cludat %>% select({{ polint }}, {{ sozoec }}, {{ libaut }}) %>% na.omit()
+  
   cludummy <- cludata %>% hcut(k = 6, stand = TRUE, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
-  
+  clusol <- cutree(cludummy, k = 6)
   cluobj <- paste0("hc", i)
-  clusol <- paste0("w", i, "_clu")
-  # cludat <- paste0("dat", i)
-  assign <- (cludat, cludata)
-  assign(cluobj, cludummy)
-  assign(clusol, cutree(cludummy, k = 6))
-  
-  fviz_cluster(cludummy)
-  fviz_silhouette(cludummy)
+  cludat <- paste0("dat", i)
+  clu_gp <- paste0("clu_gp", i)
 
-DF$pi_names <- c(DF$pi_names, polint)
-DF$so_names <- c(DF$so_names, sozoec)
-DF$la_names <- c(DF$la_names, libaut)
-}
+  cludata <- cbind(cludata, clusol)
+#  names(cludata)[names(cludata) == "clusol"] <- {{clu_gp}}
+  cludata <- cludata %>% rename_with(.cols = clusol, .fn = ~ sym(clu_gp))
+  cludata <- cludata %>% rownames_to_column(var = "lfdn") %>% mutate(across(lfdn, as.numeric)) %>% select(lfdn, !!clu_gp)
+  assign(cludat, cludata)
+  DF$semdat = full_join(DF$semdat,cludata, by = "lfdn")
+  
+  ploccl <- fviz_cluster(cludummy)
+  print(ploccl)
+  silucl <- fviz_silhouette(cludummy)
+  print(silucl)
+  plot <- DF$semdat %>%
+  group_by(!!sym(clu_gp)) %>%
+  summarise(m2 = mean(!!sym(polint)), soec = mean(!!sym(sozoec)), autlib = mean(!!sym(libaut))) %>%
+  ggplot(aes(x = !!sym(clu_gp))) +
+  geom_line(aes(y = m2, color = "PolInt")) +
+  geom_line(aes(y = soec / 1.4, color = "SozÖk")) +
+  geom_line(aes(y = autlib / 1.4, color = "Liberal")) +
+  scale_y_continuous(sec.axis = sec_axis(~ .*1.4, name = "Orientierung"))
+  print(plot)
+
+  
+  DF$pi_names <- c(DF$pi_names, polint)
+  DF$so_names <- c(DF$so_names, sozoec)
+  DF$la_names <- c(DF$la_names, libaut)
+  }
 ```
+
 ## Check ICC
 ```{r}
 
@@ -125,20 +151,24 @@ DF$semdat %>% select(paste0(DF$la_names)) %>%
 
 ## Describe Clusters
 ```{r}
-#DF$semdat %>% group_by(w17_clu) %>% 
-#  summarise(m2 = mean(kp17_010), soec = mean(kp17_1090),autlib = mean(kp17_1130)) %>% 
-#  ggplot(aes(x=w17_clu)) + 
-#           geom_line(aes(y = m2, color = "PolInt")) +
-#           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
-#           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
-#    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+DF$gles_wellen <- c(13, 15:17, 19:20)
 
+# plot_list <- list()
 
-#DF$semdat %>% group_by(w19_clu) %>% 
-#  summarise(m2 = mean(kp19_010), soec = mean(kp19_1090),autlib = mean(kp19_1130)) %>% 
-#  ggplot(aes(x=w19_clu)) + 
-#           geom_line(aes(y = m2, color = "PolInt")) +
-#           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
-#           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
-#    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+for (i in DF$gles_wellen) {
+  polint <- paste0("kp", i, "_010")
+  sozoec <- paste0("kp", i, "_1090")
+  libaut <- paste0("kp", i, "_1130")
+  clu_gp <- paste0("clu_gp", i)
+  
+  plot <- DF$semdat %>%
+    group_by(!!sym(clu_gp)) %>%
+    summarise(m2 = mean(!!sym(polint)), soec = mean(!!sym(sozoec)), autlib = mean(!!sym(libaut))) %>%
+    ggplot(aes(x = !!sym(clu_gp))) +
+    geom_line(aes(y = m2, color = "PolInt")) +
+    geom_line(aes(y = soec / 1.4, color = "SozÖk")) +
+    geom_line(aes(y = autlib / 1.4, color = "Liberal")) +
+    scale_y_continuous(sec.axis = sec_axis(~ .*1.4, name = "Orientierung"))
+  print(plot)
+ }
 ```
