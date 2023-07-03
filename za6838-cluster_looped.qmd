@@ -1,6 +1,6 @@
 ---
-title: "RECODE GLES Panel"
-subtitle: "Internet vs Social Media-Nutzung"
+title: "Cluster Analysis"
+subtitle: "GLES"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
@@ -103,8 +103,8 @@ for (i in DF$gles_wellen) {
   clu_gp <- paste0("clu_gp", i)
 
   cludata <- cbind(cludata, clusol)
-#  names(cludata)[names(cludata) == "clusol"] <- {{clu_gp}}
-  cludata <- cludata %>% rename_with(.cols = clusol, .fn = ~ sym(clu_gp))
+  names(cludata)[names(cludata) == "clusol"] <- {{clu_gp}}
+ # cludata <- cludata %>% rename_with(.cols = clusol, .fn = ~ sym(clu_gp))
   cludata <- cludata %>% rownames_to_column(var = "lfdn") %>% mutate(across(lfdn, as.numeric)) %>% select(lfdn, !!clu_gp)
   assign(cludat, cludata)
   DF$semdat = full_join(DF$semdat,cludata, by = "lfdn")

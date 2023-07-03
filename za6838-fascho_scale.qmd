@@ -1,0 +1,100 @@
+---
+title: "Cluster Analysis"
+subtitle: "GLES"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,broom,factoextra)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+
+
+# Prepare Analysis
+
+## Load Data
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+# source(here("script/models.R"))
+# toc()
+```
+## Select Vars
+```{r}
+DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp13_060","kp14_060","kp15_060")))
+DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+```
+
+## Recode Vars
+```{r}
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) 
+DF$cludat = DF$semdat %>% column_to_rownames(var = "lfdn")
+
+```
+
+## Preliminary Analysis
+```{r}
+#| include: false
+DF$cludat13 = DF$cludat %>% select(starts_with("kp13_060"))
+
+parameters::n_factors(DF$cludat13) %>% knitr::kable(.,format= 'markdown')
+DF$cludat13 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$cludat13 %>% psych::cor.plot(.,stars = T)
+DF$kp13_efa.fa = fa(DF$cludat13, nfactors = 2, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
+DF$kp13_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
+DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
+```
+
+```{r}
+DF$cludat13 %>%  psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
+DF$cludat13 %>%  select(ends_with(c("b","d","e","l"))) %>% psych::alpha(., na.rm = TRUE, check.keys = TRUE, warnings = FALSE)
+```
+
+
