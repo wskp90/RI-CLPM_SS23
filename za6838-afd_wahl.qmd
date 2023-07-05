@@ -1,0 +1,133 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "Internet vs Social Media-Nutzung"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+
+
+# Prepare Analysis
+
+## Load Data
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+# source(here("script/models.R"))
+# toc()
+```
+## Select Vars
+```{r}
+
+
+# DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
+# head(DF$semdat)
+
+DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp17_","kp18_","kp19_")) & ends_with(c("_190a","_430i","_1500")) & !contains("flag") & !ends_with("y"))
+```
+
+## Recode Vars
+```{r}
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA; else = copy"))) %>% 
+  column_to_rownames(var = "lfdn") %>% 
+  na.omit()
+
+DF$semdat = DF$semdat %>%  mutate(across(ends_with("190a"), ~rec(.,rec ="1-7,-98=0;322=1;else = copy")))
+# DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
+
+```
+
+
+```{r}
+
+DF$hc17 = DF$semdat %>% select("kp17_010","kp17_1090","kp17_1130") %>% 
+  hcut(., k = 6, stand=T, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+fviz_cluster(DF$hc17)
+fviz_silhouette(DF$hc17)
+w17_clu <- cutree(DF$hc17, k = 6)
+table(w17_clu)
+
+DF$hc19 = DF$semdat %>% select("kp19_010","kp19_1090","kp19_1130") %>% 
+  hcut(., k = 6, stand=T, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+fviz_cluster(DF$hc19)
+fviz_silhouette(DF$hc19)
+w19_clu <- cutree(DF$hc19, k = 6)
+table(w19_clu)
+
+
+
+DF$semdat = cbind(DF$semdat,w17_clu,w19_clu)
+table(DF$semdat$w17_clu , DF$semdat$w19_clu) %>% rcompanion::cramerV()
+DF$semdat %>% group_by(w17_clu,w19_clu) %>% tally() %>% spread(w19_clu, n)
+
+
+DF$semdat %>% group_by(w17_clu) %>% 
+  summarise(m2 = mean(kp17_010), soec = mean(kp17_1090),autlib = mean(kp17_1130)) %>% 
+  ggplot(aes(x=w17_clu)) + 
+           geom_line(aes(y = m2, color = "PolInt")) +
+           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+
+
+DF$semdat %>% group_by(w19_clu) %>% 
+  summarise(m2 = mean(kp19_010), soec = mean(kp19_1090),autlib = mean(kp19_1130)) %>% 
+  ggplot(aes(x=w19_clu)) + 
+           geom_line(aes(y = m2, color = "PolInt")) +
+           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+
+
+```
+
