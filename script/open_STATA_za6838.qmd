@@ -1,0 +1,59 @@
+---
+title: "Open and Merge GLES Panel"
+subtitle: "HRS: Survey"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *open 6 merge ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+format: html
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: source
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# global settings
+```
+
+## Load Packages
+
+```{r}
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,qs,tictoc,here)
+```
+
+
+## Load STATA-Data
+
+```{r}
+tic()
+za6838v6 = read_stata(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA6838_allwaves_sA_v6-0-0.dta"),drop.labels = T)
+toc()
+```
+
+
+## Save DATA
+
+```{r}
+qsave(za6838v6, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+```
