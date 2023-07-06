@@ -90,10 +90,13 @@ DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;
 afd_wahl = lm(kp18_190bb ~ kp18_020 + kp1_1500 + kp18_430i + 
                 kp1_1500*kp18_430i + kp18_020*kp18_430i, DF$semdat)
 
-broom::tidy(afd_wahl) %>% gt %>% fmt_number(decimals = 2) %>%
+afd_log = glm(kp18_190bb ~ kp18_020 + kp1_1500 + kp18_430i + 
+                kp1_1500*kp18_430i + kp18_020*kp18_430i, DF$semdat , family = 'binomial')
+
+broom::tidy(afd_log) %>% gt %>% fmt_number(decimals = 2) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate), rows = p.value < 0.05)) %>%
   gt_theme_nytimes()
-broom::glance(afd_wahl) %>% gt %>% fmt_number(decimals = 2)
+broom::glance(afd_log) %>% gt %>% fmt_number(decimals = 2)
 std_coff = lm.beta::lm.beta(afd_wahl)
 broom::tidy(std_coff) %>% gt %>% fmt_number(decimals = 2) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>%
