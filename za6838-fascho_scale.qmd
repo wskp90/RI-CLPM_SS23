@@ -89,7 +89,7 @@ DF$cludat13 %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 DF$cludat13 %>% psych::cor.plot(.,stars = T)
 DF$kp13_efa.fa = fa(DF$cludat13, nfactors = 2, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
 DF$kp13_efa.fa %>% model_parameters(sort=T, threshold = "max") %>% knitr::kable(.,format= 'markdown')
-DF$w14_effi = factor.scores(DF$ws21_efa,DF$ws21_efa.fa)
+# DF$w13_effi = factor.scores(DF$kp13_efa,DF$kp13_efa.fa)
 ```
 
 ```{r}
