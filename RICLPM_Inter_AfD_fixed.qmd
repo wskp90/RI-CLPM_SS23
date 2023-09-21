@@ -77,7 +77,7 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select("lfdn", contains(c("_1600","_430i")) & starts_with(c("kp17","kp18","kp19")))
+DF$semdat = DF$orgdat %>% select(contains(c("_1600","_430i")) & starts_with(c("kp17","kp18","kp19")))
 head(DF$semdat)
 DF$semdat_long = DF$semdat %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
 DF$semdat_panel = long_panel(DF$semdat, prefix = "kp", suffix = "_", begin = 17, end = 19, label_location = "beginning")
@@ -87,10 +87,10 @@ names(DF$semdat_long) = c("Welle","x","m")
 DF$semdat %<>% rename(x1 = kp17_1600, x2 = kp18_1600, x3 = kp19_1600,
                       y1 = kp17_430i, y2 = kp18_430i, y3 = kp19_430i)
 library(plm)
-DF$semdat_panel %<>% mutate(x = as.numeric(x),
-                            y = as.numeric(y))
-fixed <- plm(y ~ x, data=DF$semdat_panel, index=c("id", "welle"), model="within")
+DF$semdat_panel %<>% mutate(across(c(x, y), as.numeric))
+DF$semdat_panel %<>% mutate(across(c(x, y), ~rec(., rec = "-99,-97,-95,-93,-71=NA;else = copy")))
 
+fixed <- plm(y ~ x, data=DF$semdat_panel, index=c("id", "welle"), model="within")
 random <- plm(y ~ x, data=DF$semdat_panel, index=c("id", "welle"), model="random")
 phtest(fixed,random) #Hausman test
 summary(random)
@@ -102,7 +102,7 @@ summary(random)
 
 ```{r}
 # tic()
-DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
+DF$semdat_panel %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 
 # toc()
 ```
