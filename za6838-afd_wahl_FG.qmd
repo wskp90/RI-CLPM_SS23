@@ -44,7 +44,7 @@ rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,flextable,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra)
+               psych,psychTools,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra)
 ```
 
 ## Prepare Lists
@@ -72,7 +72,31 @@ DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
 # DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
 # head(DF$semdat)
 
-DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp1_","kp17_","kp18_","kp19_")) & ends_with(c("_190bb","_430i","_1500","_020")) & !contains("flag") & !ends_with("y"))
+test = DF$orgdat %>% select("kp1_2601", "kpa2_2601")
+test %>% frq
+test %<>% mutate(across(c("kp1_2601","kpa2_2601"), ~ as.numeric(as.character(.))),
+                 across(c("kp1_2601","kpa2_2601"), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")),
+                 kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
+test %>% frq
+
+
+school = DF$orgdat %>% select("kp1_2320", "kp9_2320", "kpa2_2320")
+school %>% frq
+school %<>% mutate(across(c("kp1_2320","kp9_2320","kpa2_2320"), ~ as.numeric(as.character(.))))
+school %<>% mutate(kp1_2320 = ifelse(kp1_2320 > 0 & kp9_2320 > 0, kp9_2320, kp1_2320))
+school %<>% mutate(kp1_2320 = ifelse(kp1_2320 < 0 & kpa2_2320 > 0, kpa2_2320, kp1_2320))
+school %>% frq
+
+trust = DF$orgdat %>% select("kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q")
+trust %>% frq
+trust %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")))
+trust %<>%  mutate(kp16_trust = ifelse(complete.cases(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q")), 
+                                       rowSums(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q"), na.rm = TRUE), NA))
+
+
+
+
+DF$semdat = DF$orgdat %>% select("lfdn", starts_with(c("kp1_","kp17_","kp18_","kp19_")) & ends_with(c("_190bb","_430i","_1500","_020", "_770","_780", "_790")) & !contains("flag") & !ends_with("y"))
 ```
 
 ## Recode Vars
@@ -89,6 +113,10 @@ DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;
 afd_wahl = lm(kp18_190bb ~ kp18_020 + kp1_1500 + kp18_430i + 
                 kp1_1500*kp18_430i + kp18_020*kp18_430i, DF$semdat)
 
+afd_sym = lm(kp18_430i ~ kp18_020 + kp1_1500 + kp18_780, DF$semdat)
+
+summary(afd_sym)
+
 afd_log = glm(kp18_190bb ~ kp18_020 + kp1_1500 + kp18_430i + 
                 kp1_1500*kp18_430i + kp18_020*kp18_430i, DF$semdat , family = 'binomial')
 
@@ -96,7 +124,7 @@ broom::tidy(afd_log) %>% gt %>% fmt_number(decimals = 2) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate), rows = p.value < 0.05)) %>%
   gt_theme_nytimes()
 broom::glance(afd_log) %>% gt %>% fmt_number(decimals = 2)
-std_coff = lm.beta::lm.beta(afd_wahl)
+std_coff = lm.beta::lm.beta(afd_sym)
 broom::tidy(std_coff) %>% gt %>% fmt_number(decimals = 2) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>%
   gt_theme_nytimes()
