@@ -1,4 +1,3 @@
----
 title: "RECODE GLES Panel"
 subtitle: "Internet vs Social Media-Nutzung"
 author:
@@ -6,6 +5,7 @@ author:
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
 - "Filename: *Recode ZA6838-ZA7729*"
 date: "`r format(Sys.time(), '%m.%d.%Y')`"
+---
 editor: source
 toc: true
 number-sections: true
@@ -79,7 +79,7 @@ DF$gles.scales = list(tr = c("kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p",
                    eef = c("kp17_050a","kp17_050e"),
                    cns = c("kp16_030a","kp16_030b","kp16_030c","kp16_030d"))
 
-
+DF$afd_dat = DF$orgdat %>% select(ends_with("_430i"))
 
 DF$semdat = DF$orgdat %>% select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kp9_2320", "kpa2_2320",
                                  all_of(DF$gles.scales$tr),all_of(DF$gles.scales$pp),all_of(DF$gles.scales$ex),all_of(DF$gles.scales$ief),
@@ -102,14 +102,14 @@ DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "-99,-97,-95,-93,-71=NA;1,2=0
 DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-99,-97,-95,-93,-71=NA;1:11=0;12:16=1"))
 
 DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$tr)), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")))
-DF$semdat %<>%  mutate(kp16_trust = ifelse(complete.cases(select(., all_of(DF$gles.scales$tr))), 
-                                       rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = TRUE), NA))
+DF$semdat %<>%  mutate(kp16_trust = rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = F))
+
 DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$tr)), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")))
-DF$semdat %<>%  mutate(kp16_trust = ifelse(complete.cases(select(., all_of(DF$gles.scales$tr))), 
-                                       rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = TRUE), NA))
+DF$semdat %<>%  mutate(kp16_trust = rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = TRUE))
+
 DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$pp)), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")))
-DF$semdat %<>%  mutate(kp17_popul = ifelse(complete.cases(select(., all_of(DF$gles.scales$pp))), 
-                                       rowSums(select(., all_of(DF$gles.scales$pp)), na.rm = TRUE), NA))
+DF$semdat %<>%  mutate(kp17_popul = rowSums(select(., all_of(DF$gles.scales$pp)), na.rm = TRUE))
+
 DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$ex)), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy")))
 DF$semdat %<>%  mutate(kp17_extrem = ifelse(complete.cases(select(., all_of(DF$gles.scales$ex))), 
                                        rowSums(select(., all_of(DF$gles.scales$ex)), na.rm = TRUE), NA))
@@ -134,9 +134,10 @@ DF$semdat %>% select("kp16_consp") %>% frq
 
 
 DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790")), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99,-97,-95,-93,-92,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
 
-DF$semdat %>% select("kp17_010","kp16_trust", "kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_430i","kp18_020","kp1_1500") %>% psych::cor.plot(.,stars = T)
+
 
 
 DF$semdat %>% select("kp16_trust") %>% frq
@@ -149,9 +150,41 @@ DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;
 # DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
 
 ```
-
-
+## Aufstockerwellen zusammenführen
 ```{r}
+
+DF$aufstock = DF$orgdat %>% select(contains("1621"))
+DF$aufstock %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-71=NA;else = copy")))
+
+## Funktion um NA aus der Profilwelle mit Aufstockern zu überschreiben
+johnny = function(mydata,i,j)
+{
+  tag <- c(i,j)
+  lst <- lapply(tag, function(x) {mydata[grepl(x, colnames(mydata))] })
+  ext <- lapply(seq_along(lst), function(x) {
+    str_extract(colnames(lst[[x]]), pattern = "(?<=_)\\w{5}") })
+  int <- intersect(ext[[1]], ext[[2]])
+  match_list <- lapply(lst, function(x) {
+    select(x, matches(paste(int, collapse = "|"))) })
+  res <- mapply(function(x, y) { replace(x, is.na(x), y[is.na(x)]) }, 
+                match_list[[1]], match_list[[2]])
+  mydata[,colnames(res)] <- res
+  return(mydata)
+}
+
+DF$aufstock = johnny(DF$aufstock,"kp1_1621","kpa1_1621") # Aufstocker a1
+DF$aufstock = johnny(DF$aufstock,"kp1_1621","kpa2_1621") # Aufstocker a2
+```
+
+## Analysis
+```{r}
+
+DF$afd_dat %>% psych::cor.plot(.,stars = T)
+
+DF$semdat %>% select("kp17_010","kp16_trust", "kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_430i","kp17_020","kp16_1500") %>% psych::cor.plot(.,stars = T)
+
+
+
 afd_wahl = lm(kp18_190bb ~ kp18_020 + kp16_1500 + kp18_430i + 
                 kp1_1500*kp18_430i + kp18_020*kp18_430i, DF$semdat)
 DF$semdat %<>% mutate(across("kp1_2601", ~ as.factor(.)))
