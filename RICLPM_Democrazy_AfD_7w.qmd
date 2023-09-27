@@ -1,6 +1,6 @@
 ---
 title: "RECODE GLES Panel"
-subtitle: "MediaTrust vs AfD Sympathie"
+subtitle: "Demokratie vs AfD Sympathie 7 Wellen"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
@@ -77,105 +77,42 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(contains("_1621"), ends_with(c("_160p","_430i")) & starts_with(c("kp10","kp12","kp14")))
+DF$semdat = DF$orgdat %>% select(ends_with(c("_020","_430i")) & starts_with(c("kp8","kp9","kp10","kp12","kp14","kp15","kp16")))
 head(DF$semdat)
+```
+
+
+
+
+## Prepare VARS
+```{r}
 DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
+# DF$semdat_long = DF$semdat %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
 
-## Aufstockerwellen zusammenführen
-## Funktion um NA aus der Profilwelle mit Aufstockern zu überschreiben
-johnny = function(mydata,i,j)
-{
-  tag <- c(i,j)
-  lst <- lapply(tag, function(x) {mydata[grepl(x, colnames(mydata))] })
-  ext <- lapply(seq_along(lst), function(x) {
-    str_extract(colnames(lst[[x]]), pattern = "(?<=_)\\w{5}") })
-  int <- intersect(ext[[1]], ext[[2]])
-  match_list <- lapply(lst, function(x) {
-    select(x, matches(paste(int, collapse = "|"))) })
-  res <- mapply(function(x, y) { replace(x, is.na(x), y[is.na(x)]) }, 
-                match_list[[1]], match_list[[2]])
-  mydata[,colnames(res)] <- res
-  return(mydata)
-}
-DF$semdat = johnny(DF$semdat,"kp1_1621","kpa1_1621") # Aufstocker a1
-DF$semdat = johnny(DF$semdat,"kp1_1621","kpa2_1621") # Aufstocker a2
-
-DF$semdat %<>% select(!contains(c("kpa1","kpa2"))) # Austocker löschen
-
-
-DF$semdat %<>% rename(x1 = kp10_160p, x2 = kp12_160p, x3 = kp14_160p,
-                      y1 = kp10_430i, y2 = kp12_430i, y3 = kp14_430i)
+DF$semdat %<>% rename(x1 = kp8_020, x2 = kp9_020, x3 = kp10_020, x4 = kp12_020, x5 = kp14_020, x6 = kp15_020, x7 = kp16_020,
+                      y1 = kp8_430i, y2 = kp9_430i, y3 = kp10_430i, y4 = kp12_430i, y5 = kp14_430i, y6 = kp15_430i, y7 = kp16_430i)
 ```
 
 
-
-## Check FRQ
-
+## Check Correlations & ICC
 ```{r}
-# tic()
-DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
-
-# toc()
-```
-
-
-
-## Check Correlations
-```{r}
-DF$semdat %>% select(!contains("1621")) %>% psych::cor.plot(.,stars = T)
-# DF$semdat %>% psych::cor.plot(.,stars = T)
-
-# DF$semdat_long %>% select(!"Welle") %>% 
-#   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
-#   drop_na() %>% 
-#   psych::corr.test()
-# DF$semdat %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
-#   gather(key, value) %>% drop_na() %>% 
-#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
-#   ggplot(aes(x = value, color = Welle)) +
-#   geom_density(adjust = 1.6) + 
-#   facet_wrap(vars(Var)) + 
-#   theme_classic()
-
-```
-
-## Check ICC
-```{r}
+DF$semdat %>% psych::cor.plot(.,stars = T)
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
-
 DF$semdat %>% select(contains(c("x"))) %>% 
                          irr::icc()
 DF$semdat %>% select(contains(c("y"))) %>% 
                          irr::icc()
+
 ```
 
 
-# SEM
 
+# SEM
 ## CLPM free
 ```{r}
 #| warning: false
 tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_LG, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T, group = "kp1_1621d")
-broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% gt() %>% 
-  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
-broom::tidy(DF$sem.fit) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
-  select(., c(group,term, label, op, estimate,std.error,p.value,std.all)) %>% gt(groupname_col = "group") %>% 
-  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
-  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,estimate,std.all), rows = p.value < 0.05)) %>%
-  gt_theme_nytimes()
-DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
-  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
-DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
-plot(DF$cl_graph)
-toc()
-```
-
-## CLPM Latent 2 Lag
-```{r}
-#| warning: false
-tic()
-DF$sem.fit <- lavaan::sem(DF$clpm_L2, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+DF$sem.fit <- lavaan::sem(DF$clpm_L7, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$sem.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% gt() %>% 
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
 broom::tidy(DF$sem.fit) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
@@ -183,10 +120,30 @@ broom::tidy(DF$sem.fit) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", 
   fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,estimate,std.all), rows = p.value < 0.05)) %>%
   gt_theme_nytimes()
-DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t3_layout.xlsx")) %>%
+
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t7_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$cl_graph = prepare_graph(DF$sem.fit, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
 plot(DF$cl_graph)
+toc()
+```
+
+
+## RI-CLPM constrained
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm7C, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% gt() %>% 
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t7_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
 toc()
 ```
 
@@ -194,14 +151,20 @@ toc()
 ```{r}
 #| warning: false
 tic()
-DF$ric.fit <- lavaan::sem(DF$riclpm, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+DF$ric.fit <- lavaan::sem(DF$riclpm7, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
 broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% gt() %>% 
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
 broom::tidy(DF$ric.fit) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
   fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,estimate,std.all), rows = p.value < 0.05)) %>%
   gt_theme_nytimes()
-RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3_layout.xlsx")) %>%
+broom::tidy(DF$ric.fit) %>% filter(.,op =="~~" & grepl("Lx", term) & grepl("Ly", term)) %>% select(., c(term, label, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,label,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+
+
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t7_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
 plot(DF$ric_graph)

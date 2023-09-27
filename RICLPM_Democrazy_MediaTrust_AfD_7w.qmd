@@ -1,0 +1,132 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "MediaTrust vs AfD Sympathie 7 Wellen"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/models.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+## Select Vars
+```{r}
+DF$semdat = DF$orgdat %>% select(ends_with(c("_160p","_430i","_020")) & starts_with(c("kp8","kp9","kp10","kp12","kp14","kp15","kp16")))
+head(DF$semdat)
+```
+
+
+
+
+## Prepare VARS
+```{r}
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
+# DF$semdat_long = DF$semdat %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+
+DF$semdat %<>% rename(x1 = kp8_160p, x2 = kp9_160p, x3 = kp10_160p, x4 = kp12_160p, x5 = kp14_160p, x6 = kp15_160p, x7 = kp16_160p,
+                      y1 = kp8_430i, y2 = kp9_430i, y3 = kp10_430i, y4 = kp12_430i, y5 = kp14_430i, y6 = kp15_430i, y7 = kp16_430i,
+                      z1 = kp8_020,  z2 = kp9_020,  z3 = kp10_020,  z4 = kp12_020,  z5 = kp14_020,  z6 = kp15_020,  z7 = kp16_020)
+```
+
+
+## Check Correlations & ICC
+```{r}
+DF$semdat %>% psych::cor.plot(.,stars = T)
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+DF$semdat %>% select(contains(c("x"))) %>% 
+                         irr::icc()
+DF$semdat %>% select(contains(c("y"))) %>% 
+                         irr::icc()
+DF$semdat %>% select(contains(c("z"))) %>% 
+                         irr::icc()
+```
+
+
+
+# SEM
+## RI-CLPM free
+```{r}
+#| warning: false
+tic()
+DF$ric.fit <- lavaan::sem(DF$riclpm7C3k, data=DF$semdat, missing="ML", estimator = "MLR", mimic="Mplus", meanstructure = T)
+broom::glance(DF$ric.fit) %>% select(., c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% gt() %>% 
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::tidy(DF$ric.fit) %>% filter(.,(op =="~" & grepl("Lx", term) & grepl("Ly", term) )|(op =="~" & grepl("Lx", term) & grepl("Lz", term))|(op =="~" & grepl("Ly", term) & grepl("Lz", term))) %>%
+                                     select(., c(term, op, estimate,std.error,p.value,std.all)) %>%
+                                     gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t7k3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$ric.fit, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+toc()
+```
