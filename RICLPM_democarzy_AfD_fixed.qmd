@@ -77,22 +77,30 @@ source(here("script/models.R"))
 # Prepare Analysis
 ## Select Vars
 ```{r}
-DF$semdat = DF$orgdat %>% select(ends_with(c("_020","_430i")) & starts_with(c("kp10","kp12","kp14")))
+DF$semdat = DF$orgdat %>% select(ends_with(c("_020","_430i","_160p")) & starts_with(c("kp10","kp12","kp14")))
 head(DF$semdat)
-DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-71=NA;else = copy")))
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
 # DF$semdat_long = DF$semdat %>% pivot_longer(cols = everything(), names_to = c("set",".value"), names_sep = "_")
+
+DF$semdat_panel = long_panel(DF$semdat, prefix = "kp", suffix = "_", periods = c("10","12","14"), label_location = "beginning")
+head(DF$semdat_panel)
+names(DF$semdat_panel) = c("id","welle","x","y","z")
+head(DF$semdat_panel)
+
+
+DF$semdat %<>% rename(x1 = kp10_020, x2 = kp12_020, x3 = kp14_020,
+                      y1 = kp10_430i, y2 = kp12_430i, y3 = kp14_430i,
+                      z1 = kp10_160p, z2 = kp12_160p, z3 = kp14_160p)
+
+head(DF$semdat)
 DF$semdat_panel = long_panel(DF$semdat, prefix = "kp", suffix = "_", periods = c("10","12","14"), label_location = "beginning")
 # names(DF$semdat_long) = c("Welle","x","m")
-names(DF$semdat_panel) = c("id","welle","x","y")
+names(DF$semdat_panel) = c("id","welle","x","y","z")
 head(DF$semdat_panel)
-DF$semdat %<>% rename(x1 = kp10_020, x2 = kp12_020, x3 = kp14_020,
-                      y1 = kp10_430i, y2 = kp12_430i, y3 = kp14_430i)
 library(plm)
-# DF$semdat_panel %<>% mutate(across(c(x, y), as.numeric))
-# DF$semdat_panel %<>% mutate(across(c(x, y), ~rec(., rec = "-99,-97,-95,-93,-71=NA;else = copy")))
 
-fixed <- plm(y ~ x, data=DF$semdat_panel, index=c("id", "welle"), model="within")
-random <- plm(y ~ x, data=DF$semdat_panel, index=c("id", "welle"), model="random")
+fixed <- plm(y ~ x + z, data=DF$semdat_panel, index=c("id", "welle"), model="within")
+random <- plm(y ~ x + z, data=DF$semdat_panel, index=c("id", "welle"), model="random")
 phtest(fixed,random) #Hausman test
 summary(fixed)
 summary(random)
@@ -105,7 +113,6 @@ summary(random)
 ```{r}
 # tic()
 DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
-
 # toc()
 ```
 
@@ -119,19 +126,14 @@ DF$semdat %>% summary(.,maxsum = 20) %>% knitr::kable(.,format= 'markdown')
 ## Check Correlations
 ```{r}
 DF$semdat %>% psych::cor.plot(.,stars = T)
-# DF$semdat %>% psych::cor.plot(.,stars = T)
 
-# DF$semdat_long %>% select(!"Welle") %>% 
-#   mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
-#   drop_na() %>% 
-#   psych::corr.test()
-# DF$semdat %>% mutate(across(everything(), ~rec(., rec = "-99,-97,-95,-93,-92=NA;else = copy"))) %>%
-#   gather(key, value) %>% drop_na() %>% 
-#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
-#   ggplot(aes(x = value, color = Welle)) +
-#   geom_density(adjust = 1.6) + 
-#   facet_wrap(vars(Var)) + 
-#   theme_classic()
+# Assuming DF is your data frame and you want to correlate "var1" with other variables
+correlation_matrix <- cor(DF$var1, DF[, c("var2", "var3", "var4")])
+
+# Access the correlation values
+correlation_with_var1 <- correlation_matrix[1, ]
+
+
 
 ```
 
@@ -139,10 +141,9 @@ DF$semdat %>% psych::cor.plot(.,stars = T)
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 
-DF$semdat %>% select(contains(c("x"))) %>% 
-                         irr::icc()
-DF$semdat %>% select(contains(c("y"))) %>% 
-                         irr::icc()
+DF$semdat %>% select(contains(c("x"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("y"))) %>% irr::icc()
+DF$semdat %>% select(contains(c("z"))) %>% irr::icc()
 ```
 
 
