@@ -239,33 +239,24 @@ DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr +
                       kp16_1500 + kp17_010 +
                       kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp, DF$semdat, family = 'binomial') 
 
-glance(DF$glm$afd_wahl)
-tidy(DF$glm$afd_wahl)
-
-map_df(DF$lm, broom::glance) %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% 
-  gt %>% 
-    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>% 
-    fmt_number(decimals = 3, columns = "p.value")
-
-map_df(DF$lm, broom::tidy, conf.int = TRUE, conf.level = 0.5, .id = "model") %>% select(model, term, estimate) %>%
-    spread(term, estimate) %>% gt
-
-test1 = map_df(DF$lm, broom::tidy, .id = "Model") %>% select(c("estimate","std.error","p.value"))
-test2 = map_df(DF$lm, parameters::standardise_parameters, .id = "Model") %>% select(c("Model","Parameter","Std_Coefficient"))
-cbind(test2,test1) %>% gt %>% 
-  fmt_number(decimals = 2) %>% gt_split(row_slice_i = c(5,12,24,36))
-
-
+# glance(DF$glm$afd_wahl)
+# tidy(DF$glm$afd_wahl)
+# 
+# map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% 
+#   gt %>% 
+#     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>% 
+#     fmt_number(decimals = 3, columns = "p.value")
+# 
+# map_df(DF$lm, broom::tidy, conf.int = TRUE, conf.level = 0.5, .id = "model") %>% select(model, term, estimate) %>%
+#     spread(term, estimate) %>% gt
+# 
+# test1 = map_df(DF$lm, broom::tidy, .id = "Model") %>% select(c("estimate","std.error","p.value"))
+# test2 = map_df(DF$lm, parameters::standardise_parameters, .id = "Model") %>% select(c("Model","Parameter","Std_Coefficient"))
+# cbind(test2,test1) %>% gt %>% 
+#   fmt_number(decimals = 2) %>% gt_split(row_slice_i = c(5,12,24,36))
 
 
-
-lapply(DF$lm, function(x) {
-  glance_output <- broom::glance(x)
-  tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5)
-  return(list(glance_output, tidy_output))
-})
-
-lapply(DF$lm, function(x) {
+results = DF$lm %>%  map(., function(x) {
   glance_output <- broom::glance(x) %>%
     gt %>% 
     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","sigma","statistic")) %>% 
@@ -275,30 +266,82 @@ lapply(DF$lm, function(x) {
     tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
   return(list(glance_output, tidy_output)) 
 })
-# lapply-output in quarto geht nicht!
-broom::glance(DF$lm$afd_sym3) %>% gt %>% 
-    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","sigma","statistic")) %>% 
-    fmt_number(decimals = 3, columns = "p.value")
 
-lm.beta::lm.beta(DF$lm$afd_sym3) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
-    gt %>% fmt_number(decimals = 2) %>% 
-    tab_style(style = cell_fill(color = "lightgreen"), 
-              locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>%
-  gt_theme_nytimes()
+results[[1]][[1]]
+results[[1]][[2]]
+results[[2]][[1]]
+results[[2]][[2]]
+results[[3]][[1]]
+results[[3]][[2]]
+results[[4]][[1]]
+results[[4]][[2]]
 
-broom::tidy(DF$glm$afd_wahl, conf.int = TRUE, conf.level = 0.5) %>%
-    gt %>% fmt_number(decimals = 2) %>% 
-    tab_style(style = cell_fill(color = "lightgreen"), 
-              locations = cells_body(columns = c(term,estimate), rows = p.value < 0.05)) %>% 
-  gt_theme_nytimes()
-test = DescTools::PseudoR2(DF$glm$afd_wahl, which = "all")
-test %>% as.data.frame() %>% rownames_to_column(var = "PseudoR") %>% gt %>% fmt_number(decimals = 3)
 
-reghelper::beta(DF$glm$afd_wahl)
-exp(cbind(OR = coef(DF$glm$afd_wahl), confint(DF$glm$afd_wahl))) %>% 
-  as.data.frame() %>% rownames_to_column(var = "Varible") %>% 
-  gt %>% fmt_number(decimals = 3)
+# get_glance_output <- function(x) {
+#   glance(x) %>%
+#     gt() %>%
+#     fmt_number(decimals = 2, columns = c("r.squared", "adj.r.squared", "sigma", "statistic")) %>%
+#     fmt_number(decimals = 3, columns = "p.value")
+# }
+# 
+# get_tidy_output <- function(x) {
+#   lm.beta::lm.beta(x) %>%
+#     tidy(conf.int = TRUE, conf.level = 0.5) %>%
+#     gt() %>%
+#     fmt_number(decimals = 2) %>%
+#     tab_style(
+#       style = cell_fill(color = "lightgreen"),
+#       locations = cells_body(columns = c("term", "estimate", "std_estimate"), rows = p.value < 0.05)
+#     ) %>%
+#     gt_theme_nytimes()
+# }
+# 
+# DF$lm %>% map(function(x) list(get_glance_output(x), get_tidy_output(x)))
+
+
+# 
+# 
+# lapply(DF$lm, function(x) {
+#   glance_output <- broom::glance(x)
+#   tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5)
+#   return(list(glance_output, tidy_output))
+# })
+# 
+# 
+# 
+# # lapply-output in quarto geht nicht!
+# broom::glance(DF$lm$afd_sym3) %>% gt %>% 
+#     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","sigma","statistic")) %>% 
+#     fmt_number(decimals = 3, columns = "p.value")
+# 
+# lm.beta::lm.beta(DF$lm$afd_sym3) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+#     gt %>% fmt_number(decimals = 2) %>% 
+#     tab_style(style = cell_fill(color = "lightgreen"), 
+#               locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>%
+#   gt_theme_nytimes()
+# 
+# broom::tidy(DF$glm$afd_wahl, conf.int = TRUE, conf.level = 0.5) %>%
+#     gt %>% fmt_number(decimals = 2) %>% 
+#     tab_style(style = cell_fill(color = "lightgreen"), 
+#               locations = cells_body(columns = c(term,estimate), rows = p.value < 0.05)) %>% 
+#   gt_theme_nytimes()
+# test = DescTools::PseudoR2(DF$glm$afd_wahl, which = "all")
+# test %>% as.data.frame() %>% rownames_to_column(var = "PseudoR") %>% gt %>% fmt_number(decimals = 3)
+# 
+# reghelper::beta(DF$glm$afd_wahl)
+# exp(cbind(OR = coef(DF$glm$afd_wahl), confint(DF$glm$afd_wahl))) %>% 
+#   as.data.frame() %>% rownames_to_column(var = "Varible") %>% 
+#   gt %>% fmt_number(decimals = 3)
+
 ```
+
+```{r, eval=FALSE}
+
+## some shit here
+
+
+```
+
 
 
 ::: {.hidden}
