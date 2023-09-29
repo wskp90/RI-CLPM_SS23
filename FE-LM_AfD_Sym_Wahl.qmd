@@ -1,10 +1,9 @@
 ---
-title: "RECODE GLES Panel"
-subtitle: "Internet vs Social Media-Nutzung"
+title: "GLES Panel"
+subtitle: "AfD-Sympathie explained"
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
-- "Filename: *Recode ZA6838-ZA7729*"
 date: "`r format(Sys.time(), '%m.%d.%Y')`"
 editor: source
 toc: true
@@ -17,6 +16,7 @@ format:
     code-overflow: wrap
     html-math-method: katex
     self-contained: true
+    page-layout: full
 execute: 
   echo: false
   eval: true
@@ -59,7 +59,7 @@ DF = list()
 # Prepare Analysis
 
 ## Load Data
-```{r}
+```{r Laod Data}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
@@ -67,7 +67,7 @@ DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
 # toc()
 ```
 ## Select Vars
-```{r}
+```{r Select Vars}
 # DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
 # head(DF$semdat)
 
@@ -97,7 +97,7 @@ DF$semdat_panel = DF$orgdat %>%
 ```
 
 ## Recode Vars
-```{r}
+```{r Recode Vars}
 DF$semdat = DF$semdat %>% 
   mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
 DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
@@ -172,7 +172,7 @@ DF$aufstock = johnny(DF$aufstock,"kp1_1621","kpa2_1621") # Aufstocker a2
 
 # Analysis
 ## Correlation
-```{r}
+```{r, eval=FALSE}
 
 DF$afd_dat %>% psych::cor.plot(.,stars = T)
 
@@ -241,41 +241,53 @@ DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr +
 
 # glance(DF$glm$afd_wahl)
 # tidy(DF$glm$afd_wahl)
-# 
-# map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% 
-#   gt %>% 
-#     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>% 
-#     fmt_number(decimals = 3, columns = "p.value")
-# 
+
+map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>%
+  gt %>%
+    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
+    fmt_number(decimals = 3, columns = "p.value")
+
 # map_df(DF$lm, broom::tidy, conf.int = TRUE, conf.level = 0.5, .id = "model") %>% select(model, term, estimate) %>%
 #     spread(term, estimate) %>% gt
 # 
 # test1 = map_df(DF$lm, broom::tidy, .id = "Model") %>% select(c("estimate","std.error","p.value"))
 # test2 = map_df(DF$lm, parameters::standardise_parameters, .id = "Model") %>% select(c("Model","Parameter","Std_Coefficient"))
-# cbind(test2,test1) %>% gt %>% 
+# cbind(test2,test1) %>% gt %>%
 #   fmt_number(decimals = 2) %>% gt_split(row_slice_i = c(5,12,24,36))
 
-
 results = DF$lm %>%  map(., function(x) {
-  glance_output <- broom::glance(x) %>%
-    gt %>% 
-    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","sigma","statistic")) %>% 
-    fmt_number(decimals = 3, columns = "p.value")
   tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
     gt %>% fmt_number(decimals = 2) %>% 
     tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
-  return(list(glance_output, tidy_output)) 
+  return(list(tidy_output)) 
 })
 
-results[[1]][[1]]
-results[[1]][[2]]
-results[[2]][[1]]
-results[[2]][[2]]
-results[[3]][[1]]
-results[[3]][[2]]
-results[[4]][[1]]
-results[[4]][[2]]
+```
 
+::: {.panel-tabset}
+### AfD-Sympathie Model 1
+```{r}
+results[[1]][[1]]
+```
+
+### AfD-Sympathie Model 4
+```{r}
+results[[2]][[1]]
+```
+
+### AfD-Sympathie Model 3
+```{r}
+results[[3]][[1]]
+```
+
+### AfD-Wahlabsicht Model 1
+```{r}
+results[[4]][[1]]
+```
+:::
+
+
+```{r, eval=FALSE}
 
 # get_glance_output <- function(x) {
 #   glance(x) %>%
