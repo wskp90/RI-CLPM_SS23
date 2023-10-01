@@ -17,6 +17,11 @@ format:
     html-math-method: katex
     self-contained: true
     page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1200px
+      margin-width: 200px
+      gutter-width: 1.5rem
 execute: 
   echo: false
   eval: true
@@ -26,19 +31,14 @@ editor_options:
 ---
 
 # Session Setup
-
 ## Global settings & Notes
-
 ```{r}
 # show chunk outputs in R-Markdown
 knitr::opts_chunk$set(echo = TRUE)
-
 # setting a seed
 set.seed(42)
 ```
-
 ## Load Packages
-
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
@@ -47,9 +47,7 @@ pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,gt,gtExtras,panelr,
                psych,psychTools,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra,
                reghelper,DescTools)
 ```
-
 ## Prepare Lists
-
 ```{r}
 DF = list()
 ```
@@ -57,7 +55,6 @@ DF = list()
 
 
 # Prepare Analysis
-
 ## Load Data
 ```{r Laod Data}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
@@ -83,6 +80,7 @@ DF$afd_dat = DF$orgdat %>%
 
 DF$semdat = DF$orgdat %>%
   select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kp9_2320", "kpa2_2320", "kpx_2290s",
+         contains("_1621"),
          all_of(DF$gles.scales$tr),all_of(DF$gles.scales$pp),
          all_of(DF$gles.scales$ex),all_of(DF$gles.scales$ief),
          all_of(DF$gles.scales$eef),all_of(DF$gles.scales$cns),
@@ -95,7 +93,6 @@ DF$semdat_panel = DF$orgdat %>%
   mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy"))) %>% 
   long_panel(., prefix = "kp", suffix = "_", periods = c("10","12","14"), label_location = "beginning")
 ```
-
 ## Recode Vars
 ```{r Recode Vars}
 DF$semdat = DF$semdat %>% 
@@ -138,17 +135,17 @@ DF$semdat %<>%  mutate(kp16_consp = ifelse(complete.cases(select(., all_of(DF$gl
 #                                        rowSums(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q"), na.rm = TRUE), NA))
 
 DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790")), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
-DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+# DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
 DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;else = 0")))
-# DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
 
+DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+# DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
+DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99:-1=NA; else = copy")))
 ```
 ## Aufstockerwellen zusammenführen
-```{r}
-
-DF$aufstock = DF$orgdat %>% select(contains("1621"))
-DF$aufstock %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
+```{r, eval=FALSE}
+# DF$aufstock = DF$orgdat %>% select(contains("1621"))
 
 ## Funktion um NA aus der Profilwelle mit Aufstockern zu überschreiben
 johnny = function(mydata,i,j)
@@ -166,19 +163,17 @@ johnny = function(mydata,i,j)
   return(mydata)
 }
 
-DF$aufstock = johnny(DF$aufstock,"kp1_1621","kpa1_1621") # Aufstocker a1
-DF$aufstock = johnny(DF$aufstock,"kp1_1621","kpa2_1621") # Aufstocker a2
+DF$semdat = johnny(DF$semdat,"kp1_1621","kpa1_1621") # Aufstocker a1
+DF$semdat = johnny(DF$semdat,"kp1_1621","kpa2_1621") # Aufstocker a2
 ```
 
 # Analysis
 ## Correlation
-```{r, eval=FALSE}
+```{r Correlation}
 
-DF$afd_dat %>% psych::cor.plot(.,stars = T)
-
+# DF$afd_dat %>% psych::cor.plot(.,stars = T)
 DF$afd_pred = c("wost","school","gjahr","male","kp17_010","kp16_trust", "kp16_160p","kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_020","kp16_1500")
-
-DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
+# DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
 
 DF$afd_cor =  
   cor(DF$semdat$kp17_430i, DF$semdat[, DF$afd_pred], use = "pairwise.complete.obs")
@@ -242,7 +237,8 @@ DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr +
 # glance(DF$glm$afd_wahl)
 # tidy(DF$glm$afd_wahl)
 
-map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>%
+Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Wahl_m1")
+map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
   gt %>%
     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
     fmt_number(decimals = 3, columns = "p.value")

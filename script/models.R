@@ -16,7 +16,7 @@ y2 ~ co07*y1 + co11*x1
 y3 ~ co08*y2 + co12*x2'
 
 ## CLPModell 3 Wellen unconstrained ####
-DF$clpm_L <-
+DF$clpm_L3 <-
 '
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -39,7 +39,7 @@ Ly3 ~ sp22*Ly2 + cl22*Lx2
 Ly2 ~ sp21*Ly1 + cl21*Lx1
 '
 ## CLPModell 3 Wellen unconstrained for Groups ####
-DF$clpm_LG <-
+DF$clpm_L3G <-
   '
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -62,7 +62,7 @@ Ly3 ~ Ly2 + Lx2
 Ly2 ~ Ly1 + Lx1
 '
 ## CLPModell 3 Wellen constrained ####
-DF$clpm_LC <-
+DF$clpm_L3C <-
   '
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -85,7 +85,7 @@ Ly3 ~ sp20*Ly2 + cl20*Lx2
 Ly2 ~ sp20*Ly1 + cl20*Lx1
 '
 ## CLPModell 3 Wellen unconstrained 2 Lags ####
-DF$clpm_L2 <-
+DF$clpm_L3l2 <-
   '
 #LATENT FACTORS
 Lx1 =~ 1*x1 #each factor loading set to 1
@@ -199,6 +199,156 @@ Ly4 ~ ar23*Ly3 + cl23*Lx3
 Ly3 ~ ar22*Ly2 + cl22*Lx2
 Ly2 ~ ar21*Ly1 + cl21*Lx1
 '
+## CLPModell 5 Wellen constrained ####
+DF$clpm_L5C <-
+  '
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+
+#Resiudal Correlation
+Lx1 ~~ co00*Ly1
+Lx2 ~~ co00*Ly2
+Lx3 ~~ co00*Ly3
+Lx4 ~~ co00*Ly4
+Lx5 ~~ co00*Ly5
+
+#Stability & Crosslagged Paths
+Lx5 ~ ar10*Lx4 + cl10*Ly4
+Lx4 ~ ar10*Lx3 + cl10*Ly3
+Lx3 ~ ar10*Lx2 + cl10*Ly2
+Lx2 ~ ar10*Lx1 + cl10*Ly1
+
+Ly5 ~ ar20*Ly4 + cl20*Lx4
+Ly4 ~ ar20*Ly3 + cl20*Lx3
+Ly3 ~ ar20*Ly2 + cl20*Lx2
+Ly2 ~ ar20*Ly1 + cl20*Lx1
+'
+
+## CLPModell 6 Wellen unconstrained ####
+DF$clpm_L6 <- '
+# LATENT FACTORS
+Lx1 =~ 1*x1
+Lx2 =~ 1*x2
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Lx6 =~ 1*x6
+
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+Ly6 =~ 1*y6
+
+# Residual Correlation
+Lx1 ~~ co01*Ly1
+Lx2 ~~ co02*Ly2
+Lx3 ~~ co03*Ly3
+Lx4 ~~ co04*Ly4
+Lx5 ~~ co05*Ly5
+Lx6 ~~ co06*Ly6
+
+# Stability & Crosslagged Paths
+Lx6 ~ ar16*Lx5 + cl16*Ly5
+Lx5 ~ ar15*Lx4 + cl15*Ly4
+Lx4 ~ ar14*Lx3 + cl14*Ly3
+Lx3 ~ ar13*Lx2 + cl13*Ly2
+Lx2 ~ ar12*Lx1 + cl12*Ly1
+
+Ly6 ~ ar26*Ly5 + cl26*Lx5
+Ly5 ~ ar25*Ly4 + cl25*Lx4
+Ly4 ~ ar24*Ly3 + cl24*Lx3
+Ly3 ~ ar23*Ly2 + cl23*Lx2
+Ly2 ~ ar22*Ly1 + cl22*Lx1
+'
+## CLPModell 6 Wellen AR fixed ####
+DF$clpm_L6A <- '
+# LATENT FACTORS
+Lx1 =~ 1*x1
+Lx2 =~ 1*x2
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Lx6 =~ 1*x6
+
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+Ly6 =~ 1*y6
+
+# Residual Correlation
+Lx1 ~~ co01*Ly1
+Lx2 ~~ co02*Ly2
+Lx3 ~~ co03*Ly3
+Lx4 ~~ co04*Ly4
+Lx5 ~~ co05*Ly5
+Lx6 ~~ co06*Ly6
+
+# Stability & Crosslagged Paths
+Lx6 ~ ar11*Lx5 + cl16*Ly5
+Lx5 ~ ar11*Lx4 + cl15*Ly4
+Lx4 ~ ar11*Lx3 + cl14*Ly3
+Lx3 ~ ar11*Lx2 + cl13*Ly2
+Lx2 ~ ar11*Lx1 + cl12*Ly1
+
+Ly6 ~ ar22*Ly5 + cl26*Lx5
+Ly5 ~ ar22*Ly4 + cl25*Lx4
+Ly4 ~ ar22*Ly3 + cl24*Lx3
+Ly3 ~ ar22*Ly2 + cl23*Lx2
+Ly2 ~ ar22*Ly1 + cl22*Lx1
+'
+
+## CLPModell 6 Wellen constrained ####
+DF$clpm_L6C <- '
+# LATENT FACTORS
+Lx1 =~ 1*x1
+Lx2 =~ 1*x2
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Lx6 =~ 1*x6
+
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+Ly6 =~ 1*y6
+
+# Residual Correlation
+Lx1 ~~ co00*Ly1
+Lx2 ~~ co00*Ly2
+Lx3 ~~ co00*Ly3
+Lx4 ~~ co00*Ly4
+Lx5 ~~ co00*Ly5
+Lx6 ~~ co00*Ly6
+
+# Stability & Crosslagged Paths
+Lx6 ~ ar10*Lx5 + cl10*Ly5
+Lx5 ~ ar10*Lx4 + cl10*Ly4
+Lx4 ~ ar10*Lx3 + cl10*Ly3
+Lx3 ~ ar10*Lx2 + cl10*Ly2
+Lx2 ~ ar10*Lx1 + cl10*Ly1
+
+Ly6 ~ ar20*Ly5 + cl20*Lx5
+Ly5 ~ ar20*Ly4 + cl20*Lx4
+Ly4 ~ ar20*Ly3 + cl20*Lx3
+Ly3 ~ ar20*Ly2 + cl20*Lx2
+Ly2 ~ ar20*Ly1 + cl20*Lx1
+'
+
 ## CLPModell 7 Wellen unconstrained ####
 DF$clpm_L7 <- '
 # LATENT FACTORS
@@ -244,39 +394,7 @@ Ly2 ~ ar22*Ly1 + cl22*Lx1
 '
 
 
-## CLPModell 5 Wellen constrained ####
-DF$clpm_L5C <-
-'
-#LATENT FACTORS
-Lx1 =~ 1*x1 #each factor loading set to 1
-Lx2 =~ 1*x2 
-Lx3 =~ 1*x3
-Lx4 =~ 1*x4
-Lx5 =~ 1*x5
-Ly1 =~ 1*y1
-Ly2 =~ 1*y2
-Ly3 =~ 1*y3
-Ly4 =~ 1*y4
-Ly5 =~ 1*y5
 
-#Resiudal Correlation
-Lx1 ~~ co00*Ly1
-Lx2 ~~ co00*Ly2
-Lx3 ~~ co00*Ly3
-Lx4 ~~ co00*Ly4
-Lx5 ~~ co00*Ly5
-
-#Stability & Crosslagged Paths
-Lx5 ~ ar10*Lx4 + cl10*Ly4
-Lx4 ~ ar10*Lx3 + cl10*Ly3
-Lx3 ~ ar10*Lx2 + cl10*Ly2
-Lx2 ~ ar10*Lx1 + cl10*Ly1
-
-Ly5 ~ ar20*Ly4 + cl20*Lx4
-Ly4 ~ ar20*Ly3 + cl20*Lx3
-Ly3 ~ ar20*Ly2 + cl20*Lx2
-Ly2 ~ ar20*Ly1 + cl20*Lx1
-'
 # GCLM ####
 ## GCML 3 Wellen ####
 DF$gcmlT3 <-
@@ -380,7 +498,7 @@ u_y5 ~~ 0*eta_x + 0*eta_y
 
 #  RICLPM ####
 ## RI-CLPModell 3 Wellen uncontsrained ####
-DF$riclpm <-
+DF$riclpm3 <-
 '
 #RANDOM INTERCEPTS
 RIx =~ 1*x1 + 1*x2 + 1*x3
@@ -490,7 +608,7 @@ Lz2 ~ Lz1 + Lx1 + Ly1
 
 
 ## RI-CLPModell 3 Wellen uncontsrained for Groups ####
-DF$riclpmG <-
+DF$riclpm3G <-
   '
 #RANDOM INTERCEPTS
 RIx =~ 1*x1 + 1*x2 + 1*x3
@@ -532,7 +650,7 @@ Ly3 ~ Ly2 + Lx2
 Ly2 ~ Ly1 + Lx1
 '
 ## RI-CLPModell 3 Wellen contsrained ####
-DF$riclpmC <-
+DF$riclpm3C <-
   '
 #RANDOM INTERCEPTS
 RIx =~ 1*x1 + 1*x2 + 1*x3
@@ -672,6 +790,61 @@ Ly4 ~ sp20*Ly3 + cl20*Lx3
 Ly3 ~ sp20*Ly2 + cl20*Lx2
 Ly2 ~ sp20*Ly1 + cl20*Lx1
 '
+## RI-CLPModell 5 Wellen constrained ####
+DF$riclpm5C <-
+  '
+#RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
+
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+
+#VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+x4 ~~ 0*x4
+x5 ~~ 0*x5
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+y4 ~~ 0*y4
+y5 ~~ 0*y5
+
+#LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+
+#CORRELATIONS
+RIx ~~ co00*RIy
+Lx5 ~~ co01*Ly5
+Lx4 ~~ co01*Ly4
+Lx3 ~~ co01*Ly3
+Lx2 ~~ co01*Ly2
+Lx1 ~~ co01*Ly1
+
+#Stability & LAGGED EFFECTS
+Lx5 ~ sp10*Lx4 + cl10*Ly4
+Lx4 ~ sp10*Lx3 + cl10*Ly3
+Lx3 ~ sp10*Lx2 + cl10*Ly2
+Lx2 ~ sp10*Lx1 + cl10*Ly1
+
+Ly5 ~ sp20*Ly4 + cl20*Lx4
+Ly4 ~ sp20*Ly3 + cl20*Lx3
+Ly3 ~ sp20*Ly2 + cl20*Lx2
+Ly2 ~ sp20*Ly1 + cl20*Lx1'
 
 ## RI-CLPModell 5 Wellen unconstrained ####
 DF$riclpm5 <-
@@ -729,11 +902,12 @@ Ly3 ~ sp22*Ly2 + cl22*Lx2
 Ly4 ~ sp23*Ly3 + cl23*Lx3
 Ly2 ~ sp21*Ly1 + cl21*Lx1
 '
+
 ## RI-CLPModell 6 Wellen unconstrained ####
-DF$riclpm7 <- '
+DF$riclpm6 <- '
 # RANDOM INTERCEPTS
-RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6 + 1*x7
-RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6 + 1*y7
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6
 
 # LATENT FACTORS
 Lx1 =~ 1*x1
@@ -742,7 +916,6 @@ Lx3 =~ 1*x3
 Lx4 =~ 1*x4
 Lx5 =~ 1*x5
 Lx6 =~ 1*x6
-Lx7 =~ 1*x7
 
 Ly1 =~ 1*y1
 Ly2 =~ 1*y2
@@ -750,7 +923,6 @@ Ly3 =~ 1*y3
 Ly4 =~ 1*y4
 Ly5 =~ 1*y5
 Ly6 =~ 1*y6
-Ly7 =~ 1*y7
 
 # VARIANCES @0 OF OBSERVED SCORES
 x1 ~~ 0*x1
@@ -759,7 +931,6 @@ x3 ~~ 0*x3
 x4 ~~ 0*x4
 x5 ~~ 0*x5
 x6 ~~ 0*x6
-x7 ~~ 0*x7
 
 y1 ~~ 0*y1
 y2 ~~ 0*y2
@@ -767,7 +938,6 @@ y3 ~~ 0*y3
 y4 ~~ 0*y4
 y5 ~~ 0*y5
 y6 ~~ 0*y6
-y7 ~~ 0*y7
 
 # LATENT FACTORS COVARIANCES @0
 RIx ~~ 0*Lx1
@@ -777,7 +947,6 @@ RIy ~~ 0*Ly1
 
 # CORRELATIONS
 RIx ~~ co00*RIy
-Lx7 ~~ co07*Ly7
 Lx6 ~~ co06*Ly6
 Lx5 ~~ co05*Ly5
 Lx4 ~~ co04*Ly4
@@ -786,19 +955,145 @@ Lx2 ~~ co02*Ly2
 Lx1 ~~ co01*Ly1
 
 # Stability & LAGGED EFFECTS
-Lx7 ~ sp17*Lx6 + cl17*Ly6
 Lx6 ~ sp16*Lx5 + cl16*Ly5
 Lx5 ~ sp15*Lx4 + cl15*Ly4
 Lx4 ~ sp14*Lx3 + cl14*Ly3
 Lx3 ~ sp13*Lx2 + cl13*Ly2
 Lx2 ~ sp12*Lx1 + cl12*Ly1
 
-Ly7 ~ sp27*Ly6 + cl27*Lx6
 Ly6 ~ sp26*Ly5 + cl26*Lx5
 Ly5 ~ sp25*Ly4 + cl25*Lx4
 Ly4 ~ sp24*Ly3 + cl24*Lx3
 Ly3 ~ sp23*Ly2 + cl23*Lx2
 Ly2 ~ sp22*Ly1 + cl22*Lx1
+'
+## RI-CLPModell 6 Wellen AR fixed ####
+DF$riclpm6A <- '
+# RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6
+
+# LATENT FACTORS
+Lx1 =~ 1*x1
+Lx2 =~ 1*x2
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Lx6 =~ 1*x6
+
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+Ly6 =~ 1*y6
+
+# VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+x4 ~~ 0*x4
+x5 ~~ 0*x5
+x6 ~~ 0*x6
+
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+y4 ~~ 0*y4
+y5 ~~ 0*y5
+y6 ~~ 0*y6
+
+# LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+
+# CORRELATIONS
+RIx ~~ co00*RIy
+Lx6 ~~ co06*Ly6
+Lx5 ~~ co05*Ly5
+Lx4 ~~ co04*Ly4
+Lx3 ~~ co03*Ly3
+Lx2 ~~ co02*Ly2
+Lx1 ~~ co01*Ly1
+
+# Stability & LAGGED EFFECTS
+Lx6 ~ sp11*Lx5 + cl16*Ly5
+Lx5 ~ sp11*Lx4 + cl15*Ly4
+Lx4 ~ sp11*Lx3 + cl14*Ly3
+Lx3 ~ sp11*Lx2 + cl13*Ly2
+Lx2 ~ sp11*Lx1 + cl12*Ly1
+
+Ly6 ~ sp21*Ly5 + cl26*Lx5
+Ly5 ~ sp21*Ly4 + cl25*Lx4
+Ly4 ~ sp21*Ly3 + cl24*Lx3
+Ly3 ~ sp21*Ly2 + cl23*Lx2
+Ly2 ~ sp21*Ly1 + cl22*Lx1
+'
+## RI-CLPModell 6 Wellen constrained ####
+DF$riclpm6C <- '
+# RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5 + 1*x6
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5 + 1*y6
+
+# LATENT FACTORS
+Lx1 =~ 1*x1
+Lx2 =~ 1*x2
+Lx3 =~ 1*x3
+Lx4 =~ 1*x4
+Lx5 =~ 1*x5
+Lx6 =~ 1*x6
+
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Ly4 =~ 1*y4
+Ly5 =~ 1*y5
+Ly6 =~ 1*y6
+
+# VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+x4 ~~ 0*x4
+x5 ~~ 0*x5
+x6 ~~ 0*x6
+
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+y4 ~~ 0*y4
+y5 ~~ 0*y5
+y6 ~~ 0*y6
+
+# LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+
+# CORRELATIONS
+RIx ~~ co00*RIy
+Lx6 ~~ co01*Ly6
+Lx5 ~~ co01*Ly5
+Lx4 ~~ co01*Ly4
+Lx3 ~~ co01*Ly3
+Lx2 ~~ co01*Ly2
+Lx1 ~~ co01*Ly1
+
+# Stability & LAGGED EFFECTS
+Lx6 ~ sp10*Lx5 + cl10*Ly5
+Lx5 ~ sp10*Lx4 + cl10*Ly4
+Lx4 ~ sp10*Lx3 + cl10*Ly3
+Lx3 ~ sp10*Lx2 + cl10*Ly2
+Lx2 ~ sp10*Lx1 + cl102*Ly1
+
+Ly6 ~ sp20*Ly5 + cl20*Lx5
+Ly5 ~ sp20*Ly4 + cl20*Lx4
+Ly4 ~ sp20*Ly3 + cl20*Lx3
+Ly3 ~ sp20*Ly2 + cl20*Lx2
+Ly2 ~ sp20*Ly1 + cl20*Lx1
 '
 
 ## RI-CLPModell 5 Wellen Simulation unconstrained ####
@@ -871,62 +1166,6 @@ Ly4 ~ sp23*Ly3 + cl23*Lx3
 Ly2 ~ sp21*Ly1 + cl21*Lx1
 '
 
-
-## RI-CLPModell 5 Wellen constrained ####
-DF$riclpm5C <-
-'
-#RANDOM INTERCEPTS
-RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
-RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
-
-#LATENT FACTORS
-Lx1 =~ 1*x1 #each factor loading set to 1
-Lx2 =~ 1*x2 
-Lx3 =~ 1*x3
-Lx4 =~ 1*x4
-Lx5 =~ 1*x5
-Ly1 =~ 1*y1
-Ly2 =~ 1*y2
-Ly3 =~ 1*y3
-Ly4 =~ 1*y4
-Ly5 =~ 1*y5
-
-#VARIANCES @0 OF OBSERVED SCORES
-x1 ~~ 0*x1
-x2 ~~ 0*x2
-x3 ~~ 0*x3
-x4 ~~ 0*x4
-x5 ~~ 0*x5
-y1 ~~ 0*y1
-y2 ~~ 0*y2
-y3 ~~ 0*y3
-y4 ~~ 0*y4
-y5 ~~ 0*y5
-
-#LATENT FACTORS COVARIANCES @0
-RIx ~~ 0*Lx1
-RIx ~~ 0*Ly1
-RIy ~~ 0*Lx1
-RIy ~~ 0*Ly1
-
-#CORRELATIONS
-RIx ~~ co00*RIy
-Lx5 ~~ co01*Ly5
-Lx4 ~~ co01*Ly4
-Lx3 ~~ co01*Ly3
-Lx2 ~~ co01*Ly2
-Lx1 ~~ co01*Ly1
-
-#Stability & LAGGED EFFECTS
-Lx5 ~ sp10*Lx4 + cl10*Ly4
-Lx4 ~ sp10*Lx3 + cl10*Ly3
-Lx3 ~ sp10*Lx2 + cl10*Ly2
-Lx2 ~ sp10*Lx1 + cl10*Ly1
-
-Ly5 ~ sp20*Ly4 + cl20*Lx4
-Ly4 ~ sp20*Ly3 + cl20*Lx3
-Ly3 ~ sp20*Ly2 + cl20*Lx2
-Ly2 ~ sp20*Ly1 + cl20*Lx1'
 
 ## RI-CLPModell 7 Wellen unconstrained ####
 DF$riclpm7C <- '
