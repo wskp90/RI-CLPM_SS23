@@ -846,6 +846,57 @@ Ly4 ~ sp20*Ly3 + cl20*Lx3
 Ly3 ~ sp20*Ly2 + cl20*Lx2
 Ly2 ~ sp20*Ly1 + cl20*Lx1'
 
+## RI-CLPModell 5 Wellen unconstrained  Mulder ####
+DF$riclpm5m <- '
+# Create between components (random intercepts)
+RIx =~ 1*x1 + 1*x2 + 1*x3 + 1*x4 + 1*x5
+RIy =~ 1*y1 + 1*y2 + 1*y3 + 1*y4 + 1*y5
+
+# Create within-person centered variables
+wx1 =~ 1*x1
+wx2 =~ 1*x2
+wx3 =~ 1*x3 
+wx4 =~ 1*x4
+wx5 =~ 1*x5
+wy1 =~ 1*y1
+wy2 =~ 1*y2
+wy3 =~ 1*y3
+wy4 =~ 1*y4
+wy5 =~ 1*y5
+
+  # Estimate lagged effects between within-person centered variables
+wx5 + wy5 ~ wx4 + wy4
+wx4 + wy4 ~ wx3 + wy3
+wx3 + wy3 ~ wx2 + wy2
+wx2 + wy2 ~ wx1 + wy1
+
+# Estimate covariance between within-person centered variables at first wave
+wx1 ~~ wy1 # Covariance
+
+# Estimate covariances between residuals of within-person centered variables 
+# (i.e., innovations)
+wx2 ~~ wy2
+wx3 ~~ wy3
+wx4 ~~ wy4
+wx5 ~~ wy5
+  
+  # Estimate variance and covariance of random intercepts
+RIx ~~ RIx
+RIy ~~ RIy
+RIx ~~ RIy
+
+# Estimate (residual) variance of within-person centered variables
+wx1 ~~ wx1 # Variances
+wy1 ~~ wy1 
+wx2 ~~ wx2 # Residual variances
+wy2 ~~ wy2 
+wx3 ~~ wx3 
+wy3 ~~ wy3 
+wx4 ~~ wx4 
+wy4 ~~ wy4 
+wx5 ~~ wx5
+wy5 ~~ wy5
+'
 ## RI-CLPModell 5 Wellen unconstrained ####
 DF$riclpm5 <-
 '
@@ -866,16 +917,16 @@ Ly4 =~ 1*y4
 Ly5 =~ 1*y5
 
 #VARIANCES @0 OF OBSERVED SCORES
-x1 ~~ 0*x1
-x2 ~~ 0*x2
-x3 ~~ 0*x3
-x4 ~~ 0*x4
-x5 ~~ 0*x5
-y1 ~~ 0*y1
-y2 ~~ 0*y2
-y3 ~~ 0*y3
-y4 ~~ 0*y4
-y5 ~~ 0*y5
+# x1 ~~ 0*x1
+# x2 ~~ 0*x2
+# x3 ~~ 0*x3
+# x4 ~~ 0*x4
+# x5 ~~ 0*x5
+# y1 ~~ 0*y1
+# y2 ~~ 0*y2
+# y3 ~~ 0*y3
+# y4 ~~ 0*y4
+# y5 ~~ 0*y5
 
 #LATENT FACTORS COVARIANCES @0
 RIx ~~ 0*Lx1
