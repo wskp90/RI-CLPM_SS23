@@ -20,7 +20,7 @@ format:
     page-layout: full
     grid:
       sidebar-width: 100px
-      body-width: 1200px
+      body-width: 1500px
       margin-width: 200px
       gutter-width: 1.5rem
 execute: 
@@ -134,12 +134,15 @@ DF$lv_mod$cl$m6u <- lavaan(DF$clpm_L6,  data=DF$semdat, missing="ML", estimator 
 DF$lv_mod$ri$m6c <- lavaan::sem(DF$riclpm6C, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m6u <- lavaan(DF$riclpm6,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m6cv <- lavaan(DF$riclpm6CV, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m6rcv <- lavaan(DF$riclpmR6RCV, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 
 DF$lv_mod$cl$m5c <- lavaan(DF$clpm_L5C, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$cl$m5u <- lavaan(DF$clpm_L5,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m5c <- lavaan(DF$riclpm5C, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m5u <- lavaan(DF$riclpm5,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m5cv <- lavaan(DF$riclpm5CV, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m5rcv <- lavaan(DF$riclpm5RCV, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+
 
 DF$lv_mod$cl$m4c <- lavaan(DF$clpm_L4C, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$cl$m4u <- lavaan(DF$clpm_L4,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
@@ -158,7 +161,7 @@ toc()
 ## Compare Model Fit
 ```{r}
 CL_Modell = c("CLPM 6 fixed","CLPM 6 free","CLPM 5 fixed","CLPM 5 free","CLPM 4 fixed","CLPM 4 free", "CLPM 3 fixed","CLPM 3 free")
-RI_Modell = c("RI-CLPM 6 fixed","RI-CLPM 6 free","RI-CLPM 6 cov", "RI-CLPM 5 fixed","RI-CLPM 5 free","RI-CLPM 5 cov","RI-CLPM 4 fixed","RI-CLPM 4 free","RI-CLPM 3 fixed","RI-CLPM 3 free")
+RI_Modell = c("RI-CLPM 6 fixed","RI-CLPM 6 free","RI-CLPM 6 C-ov", "RI-CLPM 6 C-ri","RI-CLPM 5 fixed","RI-CLPM 5 free","RI-CLPM 5 C-ov","RI-CLPM 5 C-ri","RI-CLPM 4 fixed","RI-CLPM 4 free","RI-CLPM 3 fixed","RI-CLPM 3 free")
 map(DF$lv_mod$cl, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(CL_Modell,.) %>% 
   gt %>%
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
@@ -231,17 +234,25 @@ plot(ri_graph_list$m6c)
 ```{r}
 plot(ri_graph_list$m6u)
 ```
-### RI-CLPM 6 Wellen cov
+### RI-CLPM 6 Wellen C-ov
 ```{r}
 plot(ri_graph_list$m6cv)
+```
+### RI-CLPM 6 Wellen C-ri
+```{r}
+plot(ri_graph_list$m6rcv)
 ```
 ### RI-CLPM 5 Wellen fixed
 ```{r}
 plot(ri_graph_list$m5c)
 ```
-### RI-CLPM 5 Wellen cov
+### RI-CLPM 5 Wellen C-ov
 ```{r}
 plot(ri_graph_list$m5cv)
+```
+### RI-CLPM 5 Wellen C-ri
+```{r}
+plot(ri_graph_list$m5rcv)
 ```
 ### RI-CLPM 5 Wellen free
 ```{r}
@@ -342,9 +353,13 @@ ri_crosslagged$m6c[[1]]
 ```{r}
 ri_crosslagged$m6u[[1]]
 ```
-### RI-CLPM 6 Wellen cov
+### RI-CLPM 6 Wellen C-ov
 ```{r}
 ri_crosslagged$m6cv[[1]]
+```
+### RI-CLPM 6 Wellen C-ri
+```{r}
+ri_crosslagged$m6rcv[[1]]
 ```
 ### RI-CLPM 5 Wellen fixed
 ```{r}
@@ -354,9 +369,13 @@ ri_crosslagged$m5c[[1]]
 ```{r}
 ri_crosslagged$m5u[[1]]
 ```
-### RI-CLPM 5 Wellen cov
+### RI-CLPM 5 Wellen C-ov
 ```{r}
 ri_crosslagged$m5cv[[1]]
+```
+### RI-CLPM 5 Wellen C-ri
+```{r}
+ri_crosslagged$m5rcv[[1]]
 ```
 ### RI-CLPM 4 Wellen fixed
 ```{r}
