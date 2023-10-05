@@ -127,7 +127,7 @@ DF$semdat %>%
 
 # SEM
 ## Estimate Models
-```{r Estimte Models}
+```{r Estimate Models}
 tic()
 DF$lv_mod$cl$m6c <- lavaan(DF$clpm_L6C, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$cl$m6u <- lavaan(DF$clpm_L6,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
@@ -159,7 +159,7 @@ toc()
 ```
 
 ## Compare Model Fit
-```{r}
+```{r Model fit}
 CL_Modell = c("CLPM 6 fixed","CLPM 6 free","CLPM 5 fixed","CLPM 5 free","CLPM 4 fixed","CLPM 4 free", "CLPM 3 fixed","CLPM 3 free")
 RI_Modell = c("RI-CLPM 6 fixed","RI-CLPM 6 free","RI-CLPM 6 C-ov", "RI-CLPM 6 C-ri","RI-CLPM 5 fixed","RI-CLPM 5 free","RI-CLPM 5 C-ov","RI-CLPM 5 C-ri","RI-CLPM 4 fixed","RI-CLPM 4 free","RI-CLPM 3 fixed","RI-CLPM 3 free")
 map(DF$lv_mod$cl, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(CL_Modell,.) %>% 
@@ -192,7 +192,7 @@ ri_graph_list <- map(DF$lv_mod$ri, function(model) {
 
 ::: {.panel-tabset}
 ### CLPM 6 Wellen fixed
-```{r}
+```{r first cl graph}
 plot(cl_graph_list$m6c)
 ```
 ### CLPM 6 Wellen fixed
@@ -220,7 +220,7 @@ plot(cl_graph_list$m4u)
 plot(cl_graph_list$m3c)
 ```
 ### CLPM 3 Wellen free
-```{r}
+```{r last cl graph}
 plot(cl_graph_list$m3u)
 ```
 :::
