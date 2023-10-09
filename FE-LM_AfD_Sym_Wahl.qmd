@@ -85,7 +85,7 @@ DF$semdat = DF$orgdat %>%
          all_of(DF$gles.scales$ex),all_of(DF$gles.scales$ief),
          all_of(DF$gles.scales$eef),all_of(DF$gles.scales$cns),
          starts_with(c("kp1_","kp16_","kp17_","kp18_","kp19_")) &
-           ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790")) & 
+           ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")) & 
            !contains("flag") & !ends_with("y"))
 
 DF$semdat_panel = DF$orgdat %>% 
@@ -134,7 +134,7 @@ DF$semdat %<>%  mutate(kp16_consp = ifelse(complete.cases(select(., all_of(DF$gl
 # DF$semdat %<>%  mutate(kp16_trust = ifelse(complete.cases(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q")), 
 #                                        rowSums(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q"), na.rm = TRUE), NA))
 
-DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790")), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 # DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
 DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;else = 0")))
@@ -172,7 +172,7 @@ DF$semdat = johnny(DF$semdat,"kp1_1621","kpa2_1621") # Aufstocker a2
 ```{r Correlation}
 
 # DF$afd_dat %>% psych::cor.plot(.,stars = T)
-DF$afd_pred = c("wost","school","gjahr","male","kp17_010","kp16_trust", "kp16_160p","kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_020","kp16_1500")
+DF$afd_pred = c("wost","school","gjahr","male","kp17_010","kp16_trust", "kp16_160p","kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_020","kp16_1500","kp17_1130","kp17_1290")
 # DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
 
 DF$afd_cor =  
@@ -226,18 +226,24 @@ DF$lm$afd_sym2 = lm(kp17_430i ~ school + wost + male + gjahr +
 DF$lm$afd_sym3 = lm(kp17_430i ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
                       kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp, DF$semdat) 
+DF$lm$afd_sym4 = lm(kp17_430i ~ school + wost + male + gjahr + 
+                      kp16_1500 + kp17_010 +
+                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
+                      kp17_1130 + kp17_1290, DF$semdat) 
 
 DF$lm$afd_wahl = lm(kp17_190bb ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp, DF$semdat) 
+                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
+                      kp17_1130 + kp17_1290, DF$semdat) 
 DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp, DF$semdat, family = 'binomial') 
+                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
+                      kp17_1130 + kp17_1290, DF$semdat, family = 'binomial') 
 
 # glance(DF$glm$afd_wahl)
 # tidy(DF$glm$afd_wahl)
 
-Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Wahl_m1")
+Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Sym_m4","AfD_Wahl_m1")
 map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
   gt %>%
     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
@@ -276,9 +282,13 @@ results[[2]][[1]]
 results[[3]][[1]]
 ```
 
-### AfD-Wahlabsicht Model 1
+### AfD-Sympathie Model 4
 ```{r}
 results[[4]][[1]]
+```
+### AfD-Wahlabsicht Model 1
+```{r}
+results[[5]][[1]]
 ```
 :::
 
