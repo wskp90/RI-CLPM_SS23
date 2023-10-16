@@ -1,0 +1,349 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "Klima vs MediaTrust"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+    page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1500px
+      margin-width: 200px
+      gutter-width: 1.5rem
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/CLPMulder.R"))
+source(here("script/RICLPMulder.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+## Select Vars
+```{r Select and Recode}
+DF$semdat = DF$orgdat %>%
+  select(ends_with(c("_1290","_160p","_1500")) & starts_with(c("kp10","kp12","kp14","kp15","kp16")))
+head(DF$semdat)
+```
+
+
+## Rename Vars for sem
+```{r}
+DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
+
+# DF$semdat %<>% rename(x1 = kp10_1290, x2 = kp12_1290, x3 = kp14_1290, x4 = kp15_1290, x5 = kp16_1290,
+#                       y1 = kp10_160p, y2 = kp12_160p, y3 = kp14_160p, y4 = kp15_160p, y5 = kp16_160p)
+DF$semdat %<>% rename(x1 = kp10_1290, x2 = kp12_1290, x3 = kp14_1290, x4 = kp15_1290, x5 = kp16_1290,
+                      y1 = kp10_160p, y2 = kp12_160p, y3 = kp14_160p, y4 = kp15_160p, y5 = kp16_160p)
+DF$semdat %<>% rename(z1 = kp15_1500)
+```
+
+
+## Check Correlations
+```{r}
+DF$semdat %>% 
+  psych::cor.plot(.,stars = T)
+# DF$semdat %>% select(ends_with(c("_1290","_160p"))) %>% 
+#   gather(key, value) %>% drop_na() %>%
+#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+#   ggplot(aes(x = value, color = Welle)) +
+#   geom_density(adjust = 1.6) +
+#   facet_wrap(vars(Var)) +
+#   theme_classic()
+
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+DF$semdat %>% 
+  select( contains(c("x"))) %>% irr::icc()
+DF$semdat %>% 
+  select(contains(c("y"))) %>% irr::icc()
+```
+
+# SEM
+## Estimate Models
+```{r Estimate Models}
+tic()
+DF$lv_mod$cl$m5c <- lavaan(DF$modef$cl$m5c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$cl$m5u <- lavaan(DF$modef$cl$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m5c <- lavaan(DF$modef$ri$m5c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m5u <- lavaan(DF$modef$ri$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m5cv <- lavaan(DF$modef$ri$m5cv, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m5rcv <- lavaan(DF$modef$ri$m5rcv, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+
+DF$lv_mod$cl$m4c <- lavaan(DF$modef$cl$m4c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$cl$m4u <- lavaan(DF$modef$cl$m4u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m4c <- lavaan(DF$modef$ri$m4c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m4u <- lavaan(DF$modef$ri$m4u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+
+DF$lv_mod$cl$m3c <- lavaan(DF$modef$cl$m3c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$cl$m3u <- lavaan(DF$modef$cl$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m3c <- lavaan(DF$modef$ri$m3c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m3u <- lavaan(DF$modef$ri$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+toc()
+# DF$lv_mod$ri$m5cv <- lavaan(DF$riclpm5CV, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+
+```
+
+## Compare Model Fit
+```{r Model fit}
+CL_Modell = c("CLPM 5 fixed","CLPM 5 free","CLPM 4 fixed","CLPM 4 free", "CLPM 3 fixed","CLPM 3 free")
+RI_Modell = c("RI-CLPM 5 fixed","RI-CLPM 5 free","RI-CLPM 5 C-ov","RI-CLPM 5 C-ri","RI-CLPM 4 fixed","RI-CLPM 4 free","RI-CLPM 3 fixed","RI-CLPM 3 free")
+map(DF$lv_mod$cl, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(CL_Modell,.) %>% 
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+map(DF$lv_mod$ri, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(RI_Modell,.) %>% 
+  gt %>%
+    fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+
+```
+
+## Graphs
+```{r}
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+
+cl_graph_list <- map(DF$lv_mod$cl, function(model) {
+  prepare_graph(model, layout = DF$cl_layout) %>%
+    edit_graph({label_location = 0.8}, element = "edges") %>%
+    edit_graph({ label = paste(est_sig_std)}, element="edges")
+})  
+ri_graph_list <- map(DF$lv_mod$ri, function(model) {
+  prepare_graph(model, layout = DF$RI_layout) %>%
+    edit_graph({label_location = 0.8}, element = "edges") %>%
+    edit_graph({ label = paste(est_sig_std)}, element="edges")
+})  
+```
+
+
+```{r, eval=FALSE}
+#| output: asis
+#| include: false
+map(ri_graph_list, plot)
+```
+
+
+::: {.panel-tabset}
+### CLPM 5 Wellen fixed
+```{r}
+plot(cl_graph_list$m5c)
+```
+### CLPM 5 Wellen free
+```{r}
+plot(cl_graph_list$m5u)
+```
+### CLPM 4 Wellen fixed
+```{r}
+plot(cl_graph_list$m4c)
+```
+### CLPM 4 Wellen free
+```{r}
+plot(cl_graph_list$m4u)
+```
+### CLPM 3 Wellen fixed
+```{r}
+plot(cl_graph_list$m3c)
+```
+### CLPM 3 Wellen free
+```{r last cl graph}
+plot(cl_graph_list$m3u)
+```
+:::
+
+::: {.panel-tabset}
+### RI-CLPM 5 Wellen fixed
+```{r}
+plot(ri_graph_list$m5c)
+```
+### RI-CLPM 5 Wellen C-ov
+```{r}
+plot(ri_graph_list$m5cv)
+```
+### RI-CLPM 5 Wellen C-ri
+```{r}
+plot(ri_graph_list$m5rcv)
+```
+### RI-CLPM 5 Wellen free
+```{r}
+plot(ri_graph_list$m5u)
+```
+### RI-CLPM 4 Wellen fixed
+```{r}
+plot(ri_graph_list$m4c)
+```
+### RI-CLPM 4 Wellen free
+```{r}
+plot(ri_graph_list$m4u)
+```
+### RI-CLPM 3 Wellen fixed
+```{r}
+plot(ri_graph_list$m3c)
+```
+### RI-CLPM 3 Wellen free
+```{r}
+plot(ri_graph_list$m3u)
+```
+:::
+
+## Coefficients
+
+```{r Define Tables}
+
+cl_crosslagged = DF$lv_mod$cl %>%  map(., function(x) {
+  tidy_output <- broom::tidy(x) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+
+ri_crosslagged = DF$lv_mod$ri %>%  map(., function(x) {
+  tidy_output <- broom::tidy(x) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+
+# broom::tidy(DF$lv_mod$ri$m5cv) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
+#   select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+#   fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+#   tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+#   gt_theme_nytimes()
+
+```
+
+::: {.panel-tabset}
+### CLPM 5 Wellen fixed
+```{r}
+cl_crosslagged$m5c[[1]]
+```
+### CLPM 5 Wellen free
+```{r}
+cl_crosslagged$m5u[[1]]
+```
+### CLPM 4 Wellen fixed
+```{r}
+cl_crosslagged$m4c[[1]]
+```
+### CLPM 4 Wellen free
+```{r}
+cl_crosslagged$m4u[[1]]
+```
+### CLPM 3 Wellen fixed
+```{r}
+cl_crosslagged$m3c[[1]]
+```
+### CLPM 3 Wellen free
+```{r}
+cl_crosslagged$m3u[[1]]
+```
+:::
+
+
+::: {.panel-tabset}
+### RI-CLPM 5 Wellen fixed
+```{r}
+ri_crosslagged$m5c[[1]]
+```
+### RI-CLPM 5 Wellen free
+```{r}
+ri_crosslagged$m5u[[1]]
+```
+### RI-CLPM 5 Wellen C-ov
+```{r}
+ri_crosslagged$m5cv[[1]]
+```
+### RI-CLPM 5 Wellen C-ri
+```{r}
+ri_crosslagged$m5rcv[[1]]
+```
+### RI-CLPM 4 Wellen fixed
+```{r}
+ri_crosslagged$m4c[[1]]
+```
+### RI-CLPM 4 Wellen free
+```{r}
+ri_crosslagged$m4u[[1]]
+```
+### RI-CLPM 3 Wellen fixed
+```{r}
+ri_crosslagged$m3c[[1]]
+```
+### RI-CLPM 3 Wellen free
+```{r}
+ri_crosslagged$m3u[[1]]
+```
+:::
