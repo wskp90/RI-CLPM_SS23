@@ -231,6 +231,12 @@ DF$lm$afd_sym4 = lm(kp17_430i ~ school + wost + male + gjahr +
                       kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
                       kp17_1130 + kp17_1290, DF$semdat) 
 
+DF$lm$mtrust = lm(kp16_160p ~ school + wost + male + gjahr + 
+                      kp16_1500 + kp16_010 +
+                      kp16_020 + kp17_popul + kp17_extrem + kp16_consp +
+                      kp17_1130 + kp17_1290, DF$semdat) 
+
+
 DF$lm$afd_wahl = lm(kp17_190bb ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
                       kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
@@ -243,7 +249,7 @@ DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr +
 # glance(DF$glm$afd_wahl)
 # tidy(DF$glm$afd_wahl)
 
-Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Sym_m4","AfD_Wahl_m1")
+Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Sym_m4","Media Trust","AfD_Wahl_m1")
 map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
   gt %>%
     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
@@ -286,9 +292,14 @@ results[[3]][[1]]
 ```{r}
 results[[4]][[1]]
 ```
-### AfD-Wahlabsicht Model 1
+### Media Trust
 ```{r}
 results[[5]][[1]]
+```
+
+### AfD-Wahlabsicht Model 1
+```{r}
+results[[6]][[1]]
 ```
 :::
 
