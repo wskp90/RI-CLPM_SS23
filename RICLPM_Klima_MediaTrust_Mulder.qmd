@@ -58,7 +58,7 @@ set.seed(42)
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,gtsummary,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
                psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
 ```
