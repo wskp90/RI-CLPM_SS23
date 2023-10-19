@@ -42,7 +42,7 @@ set.seed(42)
 ```{r}
 rm(list= ls()) # start clean ####
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,gt,gtExtras,panelr,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,gt,gtExtras,gtsummary,panelr,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
                psych,psychTools,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra,
                reghelper,DescTools)
@@ -63,85 +63,98 @@ DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
 # source(here("script/models.R"))
 # toc()
 ```
+
+## generate Lists for scales
+```{r generate Lists for scales}
+DF$vnam_list <- list(
+  tr = c("_160a", "_160b", "_160j", "_160p", "_160q"),
+  pp = c("_3103a","_3103b","_3103c","_3103d","_3103e","_3103f","_3103g","_3103h"),
+  ex = c("_060e","_060l","_060i","_060j","_060b","_060d"),
+  ief = c("_050k","_050h"),
+  eef = c("_050a","_050e"))
+DF$vwav_list <- list(tr = c(14,15,16),
+  pp = c(14,15,17),
+  ex = c(14,15,17),
+  ief = c(14,15,16,17,18,19),
+  eef = c(14,15,16,17,18,19))
+# Loop through vwav and vnam lists
+for (type in names(DF$vnam_list)) {
+  for (welle in DF$vwav_list[[type]]) {
+    variable_names <- paste("kp", welle, DF$vnam_list[[type]], sep = "")
+    DF$gles.scales[[paste0(type, welle)]] <- unlist(variable_names)
+  }
+}
+# Define cns
+DF$gles.scales$cns16 = c("kp16_030a","kp16_030b","kp16_030c","kp16_030d")
+# Flatten list for select
+DF$allscales = unlist(DF$gles.scales) %>% as.vector()
+```
+
 ## Select Vars
 ```{r Select Vars}
-# DF$semdat = DF$orgdat %>% select(contains(c("_421","_170")) & !contains(c("_1701","_1702")) & !contains("flag") & !ends_with("y") & starts_with(c("kp17","kp18","kp19")))
-# head(DF$semdat)
-
-DF$gles.scales = list(tr = c("kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q"),
-                   pp = c("kp17_3103a","kp17_3103b","kp17_3103c","kp17_3103d","kp17_3103e","kp17_3103f","kp17_3103g","kp17_3103h"),
-                   ex = c("kp17_060e","kp17_060l","kp17_060i","kp17_060j","kp17_060b","kp17_060d"),
-                   ief = c("kp17_050k","kp17_050h"),
-                   eef = c("kp17_050a","kp17_050e"),
-                   cns = c("kp16_030a","kp16_030b","kp16_030c","kp16_030d"))
-
 DF$afd_dat = DF$orgdat %>%
   select(ends_with("_430i"))
 
 DF$semdat = DF$orgdat %>%
   select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kp9_2320", "kpa2_2320", "kpx_2290s",
          contains("_1621"),
-         all_of(DF$gles.scales$tr),all_of(DF$gles.scales$pp),
-         all_of(DF$gles.scales$ex),all_of(DF$gles.scales$ief),
-         all_of(DF$gles.scales$eef),all_of(DF$gles.scales$cns),
-         starts_with(c("kp1_","kp16_","kp17_","kp18_","kp19_")) &
+         all_of(DF$allscales),
+         starts_with(c("kp1_","kp14_","kp15_","kp16_","kp17_","kp18_","kp19_")) &
            ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")) & 
            !contains("flag") & !ends_with("y"))
 
+
 DF$semdat_panel = DF$orgdat %>% 
   select(starts_with(c("kp10_","kp12_","kp14_")) & ends_with(c("_430i","_160p","_020"))) %>% 
-  mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy"))) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-71=NA;else = copy"))) %>% 
   long_panel(., prefix = "kp", suffix = "_", periods = c("10","12","14"), label_location = "beginning")
 ```
 ## Recode Vars
 ```{r Recode Vars}
 DF$semdat = DF$semdat %>% 
   mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
+
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+
+# DF$semdat = DF$semdat %>% mutate(across(where(is.factor), ~ as_numeric(.)))
+
+DF$semdat = DF$semdat %>% 
+  mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
 DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
 
-DF$semdat %<>% mutate(across(c("kp1_2601","kpa2_2601"), ~ as.numeric(as.character(.))),
-                 across(c("kp1_2601","kpa2_2601"), ~rec(., rec = "-99:-1=NA; else = copy")),
-                 kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
-DF$semdat %<>% mutate(across(c("kp1_2320","kp9_2320","kpa2_2320"), ~ as.numeric(as.character(.))),
-                   kp1_2320 = ifelse(kp1_2320 > 0 & kp9_2320 > 0, kp9_2320, kp1_2320), 
-                   kp1_2320 = ifelse(kp1_2320 < 0 & kpa2_2320 > 0, kpa2_2320, kp1_2320))
+DF$semdat %<>% mutate(kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
+DF$semdat %<>% mutate(kp1_2320 = if_else(!is.na(kp1_2320)  & !is.na(kp9_2320), kp9_2320, kp1_2320),
+                      kp1_2320 = if_else(is.na(kp1_2320) & !is.na(kpa2_2320), kpa2_2320, kp1_2320))
 
-DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "-99:-1=NA;1,2=0;,3,4=1;5,9=2"))
-DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-99:-1=NA;1:11=0;12:16=1"))
+DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "-95=NA;1,2=0;,3,4=1;5,9=2"))
+DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-95=NA;1:11=0;12:16=1"))
+DF$semdat %<>%  mutate(across(c(all_of(DF$allscales)), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
 
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$tr)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp16_trust = rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = F))
+# Make scales accross waves
+for (scale_name in names(DF$gles.scales)) {
+    DF$semdat <- DF$semdat %>%
+      mutate(
+        !!paste(scale_name, sep = "") := rowSums(
+          select(., all_of(DF$gles.scales[[scale_name]])), na.rm = F))}
 
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$tr)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp16_trust = rowSums(select(., all_of(DF$gles.scales$tr)), na.rm = TRUE))
 
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$pp)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp17_popul = rowSums(select(., all_of(DF$gles.scales$pp)), na.rm = TRUE))
-
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$ex)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp17_extrem = ifelse(complete.cases(select(., all_of(DF$gles.scales$ex))), 
-                                       rowSums(select(., all_of(DF$gles.scales$ex)), na.rm = TRUE), NA))
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$ief)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp17_ineff = ifelse(complete.cases(select(., all_of(DF$gles.scales$ief))), 
-                                       rowSums(select(., all_of(DF$gles.scales$ief)), na.rm = TRUE), NA))
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$eef)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp17_exeff = ifelse(complete.cases(select(., all_of(DF$gles.scales$eef))), 
-                                       rowSums(select(., all_of(DF$gles.scales$eef)), na.rm = TRUE), NA))
-DF$semdat %<>%  mutate(across(c(all_of(DF$gles.scales$cns)), ~rec(., rec = "-99:-1=NA; else = copy")))
-DF$semdat %<>%  mutate(kp16_consp = ifelse(complete.cases(select(., all_of(DF$gles.scales$cns))), 
-                                       rowSums(select(., all_of(DF$gles.scales$cns)), na.rm = TRUE), NA))
-# DF$semdat %>% select("kp16_consp") %>% frq
-# DF$semdat %<>%  mutate(kp16_trust = ifelse(complete.cases(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q")), 
-#                                        rowSums(select(., "kp16_160a", "kp16_160b", "kp16_160j", "kp16_160p", "kp16_160q"), na.rm = TRUE), NA))
-
-DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99,-98,-97,-95,-93,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 # DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
 DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;else = 0")))
 
 DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
 # DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
-DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99:-1=NA; else = copy")))
+DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99,-95,-93=NA; else = copy")))
 ```
 ## Aufstockerwellen zusammenführen
 ```{r, eval=FALSE}
@@ -172,7 +185,7 @@ DF$semdat = johnny(DF$semdat,"kp1_1621","kpa2_1621") # Aufstocker a2
 ```{r Correlation}
 
 # DF$afd_dat %>% psych::cor.plot(.,stars = T)
-DF$afd_pred = c("wost","school","gjahr","male","kp17_010","kp16_trust", "kp16_160p","kp17_popul", "kp17_extrem", "kp17_ineff", "kp17_exeff","kp16_consp","kp17_020","kp16_1500","kp17_1130","kp17_1290")
+DF$afd_pred = c("wost","school","gjahr","male","kp17_010","tr16", "kp16_160p","pp17", "ex17", "ief17", "eef17","cns16","kp17_020","kp16_1500","kp17_1130","kp17_1290")
 # DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
 
 DF$afd_cor =  
@@ -225,10 +238,10 @@ DF$lm$afd_sym2 = lm(kp17_430i ~ school + wost + male + gjahr +
                       kp16_1500 + kp17_010, DF$semdat) 
 DF$lm$afd_sym3 = lm(kp17_430i ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp, DF$semdat) 
+                      kp17_020 + tr16 + pp17 + ex17 + cns16, DF$semdat) 
 DF$lm$afd_sym4 = lm(kp17_430i ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
+                      kp17_020 + tr16 + pp17 + ex17_extrem + cnskp16 +
                       kp17_1130 + kp17_1290, DF$semdat) 
 
 DF$lm$mtrust = lm(kp16_160p ~ school + wost + male + gjahr + 

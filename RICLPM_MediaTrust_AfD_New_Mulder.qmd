@@ -86,14 +86,24 @@ source(here("script/RICLPMulder.R"))
 ```{r Select and Recode}
 DF$semdat = DF$orgdat %>%
   select(ends_with(c("_160p","_160p1","_430i","_1500")) & starts_with(c("kp9","kp10","kp12","kp14","kp15","kp16","kp21")))
-head(DF$semdat)
+descr(DF$semdat, show = c("type", "n", "range"))
 ```
 
 
 ## Rename Vars for sem
 ```{r}
-DF$semdat %<>% mutate(across(everything(), ~rec(., rec = "-99:-1=NA;else = copy")))
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
 
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+
+descr(DF$semdat, show = c("type", "n", "range"))
 # DF$semdat %<>% rename(x1 = kp10_160p, x2 = kp12_160p, x3 = kp14_160p, x4 = kp15_160p, x5 = kp16_160p,
 #                       y1 = kp10_430i, y2 = kp12_430i, y3 = kp14_430i, y4 = kp15_430i, y5 = kp16_430i)
 DF$semdat %<>% rename(x1 = kp9_160p, x2 = kp10_160p, x3 = kp12_160p, x4 = kp14_160p, x5 = kp15_160p, x6 = kp16_160p,
