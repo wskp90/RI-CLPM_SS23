@@ -59,7 +59,7 @@ DF = list()
 ```{r Laod Data}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
-DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_v6.qs"))
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
 # source(here("script/models.R"))
 # toc()
 ```
@@ -96,7 +96,7 @@ DF$afd_dat = DF$orgdat %>%
   select(ends_with("_430i"))
 
 DF$semdat = DF$orgdat %>%
-  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kp9_2320", "kpa2_2320", "kpx_2290s",
+  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kp9_2320", "kpa2_2320", "kpx_2290s","kpx_2290s.wa2",
          contains("_1621"),
          all_of(DF$allscales),
          starts_with(c("kp1_","kp14_","kp15_","kp16_","kp17_","kp18_","kp19_")) &
@@ -111,8 +111,13 @@ DF$semdat_panel = DF$orgdat %>%
 ```
 ## Recode Vars
 ```{r Recode Vars}
+DF$semdat %>% select(contains("2290s")) %>% frq
+DF$semdat %<>% mutate(kpx_2290s = if_else(is.na(kpx_2290s), kpx_2290s.wa2, kpx_2290s))
+
 DF$semdat = DF$semdat %>% 
   mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
+DF$semdat %>% select("gjahr") %>% descr()
+
 
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
 negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
@@ -123,21 +128,22 @@ go_away <- function(x, na_values) {
   x[x %in% na_values] <- NA
   return(x)
 }
+
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
 
 # DF$semdat = DF$semdat %>% mutate(across(where(is.factor), ~ as_numeric(.)))
 
-DF$semdat = DF$semdat %>% 
-  mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
+# SozioDemographie
 DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
 
-DF$semdat %<>% mutate(kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
 DF$semdat %<>% mutate(kp1_2320 = if_else(!is.na(kp1_2320)  & !is.na(kp9_2320), kp9_2320, kp1_2320),
                       kp1_2320 = if_else(is.na(kp1_2320) & !is.na(kpa2_2320), kpa2_2320, kp1_2320))
+DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "1,2=0;,3,4=1;5,9=2;else=copy"))
 
-DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "-95=NA;1,2=0;,3,4=1;5,9=2"))
+
+DF$semdat %<>% mutate(kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
 DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-95=NA;1:11=0;12:16=1"))
-DF$semdat %<>%  mutate(across(c(all_of(DF$allscales)), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
+# DF$semdat %<>%  mutate(across(c(all_of(DF$allscales)), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
 
 # Make scales accross waves
 for (scale_name in names(DF$gles.scales)) {
@@ -147,17 +153,21 @@ for (scale_name in names(DF$gles.scales)) {
           select(., all_of(DF$gles.scales[[scale_name]])), na.rm = F))}
 
 
-DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99,-98,-97,-95,-93,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+# DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99,-98,-97,-95,-93,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 # DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
+# Wahlabsicht AfD
 DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;else = 0")))
-
+# Geschlecht
 DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
 # DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
-DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99,-95,-93=NA; else = copy")))
+# DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99,-95,-93=NA; else = copy")))
+
+# DF$semdat %>% select(where(is.numeric)) %>% descr(.,show = c("type", "n", "range"))
 ```
 ## Aufstockerwellen zusammenführen
 ```{r, eval=FALSE}
+#| include: false
 # DF$aufstock = DF$orgdat %>% select(contains("1621"))
 
 ## Funktion um NA aus der Profilwelle mit Aufstockern zu überschreiben
