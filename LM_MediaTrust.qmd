@@ -1,0 +1,214 @@
+---
+title: "GLES Panel"
+subtitle: "Medienvertrauen explained"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+    page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1200px
+      margin-width: 200px
+      gutter-width: 1.5rem
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+## Global settings & Notes
+```{r}
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+# setting a seed
+set.seed(42)
+```
+## Load Packages
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(foreign,tidyverse,sjmisc,sjlabelled,sjPlot,Hmisc,gt,gtExtras,gtsummary,panelr,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,psychTools,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra,
+               reghelper,DescTools)
+```
+## Prepare Lists
+```{r}
+DF = list()
+```
+
+# Prepare Analysis
+## Load Data
+```{r Laod Data}
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+```
+
+## generate Lists for scales
+```{r generate Lists for scales}
+DF$vnam_list <- list(
+  tr = c("_160a", "_160b", "_160j", "_160p", "_160q"),
+  pp = c("_3103a","_3103b","_3103c","_3103d","_3103e","_3103f","_3103g","_3103h"),
+  ex = c("_060e","_060f","_060g","_060i","_060j","_060k","_060b","_060d","_060h"),
+  ief = c("_050k","_050h"),
+  eef = c("_050a","_050e"))
+DF$vwav_list <- list(tr = 8,
+  pp = 5,
+  ex = 2,
+  ief = 5,
+  eef = 5)
+# Loop through vwav and vnam lists
+for (type in names(DF$vnam_list)) {
+  for (welle in DF$vwav_list[[type]]) {
+    variable_names <- paste("kp", welle, DF$vnam_list[[type]], sep = "")
+    DF$gles.scales[[paste0(type, welle)]] <- unlist(variable_names)
+  }
+}
+DF$allscales = unlist(DF$gles.scales) %>% as.vector()
+```
+
+## Select Vars
+```{r Select Vars}
+
+DF$semdat = DF$orgdat %>%
+  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kpa1_2320", "kpx_2290s",
+         contains("_1621"),
+         all_of(DF$allscales),
+         starts_with(c("kp7_","kp8_")) & contains(c("_1616","_1681")),
+         starts_with(c("kp7_","kp8_")) & ends_with(c("_010","_160p","_1500","_020","_1600","_1610","_1701aa","_1702","_1933")))
+
+```
+## Recode Vars
+```{r Recode Vars}
+# Geburtsjahr als numerisches Var  erzeugen
+DF$semdat = DF$semdat %>% 
+  mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
+DF$semdat %>% select("gjahr") %>% descr()
+
+
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.))) # Sonst geht mutate in die Hose
+
+DF$semdat = DF$semdat %>% mutate(kp7_1610 = rec(kp7_1610, rec = "-97=1;else=copy")) # Social Media O-Tage
+DF$semdat = DF$semdat %>% mutate(kp8_1702 = ifelse(kp8_1701aa == 2, 1, kp8_1702)) # SPON 0-Tage
+
+# Alles Missinsg sammeln und NA machen
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+
+# SozioDemographie
+DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+
+DF$semdat %<>% mutate(kp1_2320 = if_else(is.na(kp1_2320) & !is.na(kpa1_2320), kpa1_2320, kp1_2320))
+DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "1,2=0;,3,4=1;5,9=2;else=copy"))
+
+DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-95=NA;1:11=0;12:16=1"))
+
+# Make scales accross waves
+for (scale_name in names(DF$gles.scales)) {
+    DF$semdat <- DF$semdat %>%
+      mutate(
+        !!paste(scale_name, sep = "") := rowSums(
+          select(., all_of(DF$gles.scales[[scale_name]])), na.rm = F))}
+
+
+# Geschlecht
+DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+```
+
+# Analysis
+## Correlation
+```{r Correlation}
+
+# DF$afd_dat %>% psych::cor.plot(.,stars = T)
+DF$trust_pred = c("wost","school","gjahr","male","kp7_010","tr8","pp5", "ex2", "ief5", "eef5","kp8_020","kp7_1500","kp8_1600","kp8_1702","kp8_1933","kp7_1610",
+                  "kp8_1681a","kp8_1681b","kp8_1681c","kp8_1681d")
+# DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
+
+DF$trust_cor =  
+  cor(DF$semdat$kp8_160p, DF$semdat[, DF$trust_pred], use = "pairwise.complete.obs")
+DF$trust_cor = DF$trust_cor[1,]
+DF$trust_cor = data.frame(variable = DF$trust_pred, KorKof = DF$trust_cor) 
+
+
+ggplot(DF$trust_cor, aes(y = reorder(variable, -KorKof), x = KorKof)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.5) +
+  geom_text(aes(label = round(KorKof, 2)), hjust = 1.2, size = 3) +
+  labs(title = "Korrelation mit Medienvertrauen", y = "Variables", x = "Correlation") +
+  theme_minimal() + xlim(-0.5, +0.5)
+```
+
+
+
+## OLS-Models
+```{r}
+DF$semdat %<>% mutate(across("kp1_2601", ~ as.factor(.)))
+DF$lm$trust1 = lm(kp8_160p ~ school + wost + male + gjahr, DF$semdat) 
+DF$lm$trust2 = lm(kp8_160p ~ school + wost + male + gjahr + 
+                      kp7_1500 + kp7_010, DF$semdat) 
+DF$lm$trust3 = lm(kp8_160p ~ school + wost + male + gjahr + 
+                      kp7_1500 + kp7_010 +
+                      kp8_020 + pp5 + ex2 + ief5 + eef5, DF$semdat) 
+DF$lm$trust4 = lm(kp8_160p ~ school + wost + male + gjahr + 
+                      kp7_1500 + kp7_010 +
+                      kp8_020 + pp5 + ex2 + ief5 + eef5 +
+                      kp8_1681a + kp8_1681b + kp8_1600 + kp7_1610 + kp8_1933 + kp8_1702, DF$semdat) 
+
+
+Modell = c("MediaTrust_m1","MediaTrust_m2","MediaTrust_m3","MediaTrust_m4")
+map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
+  gt %>%
+    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
+    fmt_number(decimals = 3, columns = "p.value")
+
+
+results = DF$lm %>%  map(., function(x) {
+  tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+    gt %>% fmt_number(decimals = 2) %>% 
+    tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+# mdlchek = map_df(DF$lm, check_model)
+
+```
+
+::: {.panel-tabset}
+### Medienvertrauen Model 1
+```{r}
+results[[1]][[1]]
+```
+
+### Medienvertrauen Model 2
+```{r}
+results[[2]][[1]]
+```
+
+### Medienvertrauen Model 3
+```{r}
+results[[3]][[1]]
+```
+
+### Medienvertrauen Model 4
+```{r}
+results[[4]][[1]]
+```
