@@ -57,7 +57,11 @@ DF = list()
 # Prepare Analysis
 ## Load Data
 ```{r Laod Data}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+# source(here("script/models.R"))
+# toc()
 ```
 
 ## generate Lists for scales
@@ -88,13 +92,17 @@ DF$allscales = unlist(DF$gles.scales) %>% as.vector()
 
 ## Select Vars
 ```{r Select Vars}
+DF$afd_dat = DF$orgdat %>%
+  select(ends_with("_430i"))
+
 DF$semdat = DF$orgdat %>%
-  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kpx_2280.wa2","kp9_2320", "kpa2_2320", "kpx_2290s","kpx_2290s.wa2",
+  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kp9_2320", "kpa2_2320", "kpx_2290s","kpx_2290s.wa2",
          contains("_1621"),
          all_of(DF$allscales),
          starts_with(c("kp1_","kp14_","kp15_","kp16_","kp17_","kp18_","kp19_")) &
            ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")) & 
            !contains("flag") & !ends_with("y"))
+
 
 DF$semdat_panel = DF$orgdat %>% 
   select(starts_with(c("kp10_","kp12_","kp14_")) & ends_with(c("_430i","_160p","_020"))) %>% 
@@ -103,13 +111,12 @@ DF$semdat_panel = DF$orgdat %>%
 ```
 ## Recode Vars
 ```{r Recode Vars}
-# Muss vor Umwandlung in numeric stehen
-
-# DF$semdat %>% select(contains("2290s")) %>% frq
+DF$semdat %>% select(contains("2290s")) %>% frq
 DF$semdat %<>% mutate(kpx_2290s = if_else(is.na(kpx_2290s), kpx_2290s.wa2, kpx_2290s))
+
 DF$semdat = DF$semdat %>% 
   mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
-# DF$semdat %>% select("gjahr") %>% descr()
+DF$semdat %>% select("gjahr") %>% descr()
 
 
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
@@ -124,21 +131,21 @@ go_away <- function(x, na_values) {
 
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
 
-# Demographics
-## Geschlecht
-DF$semdat %<>% mutate(kpx_2280 = if_else(is.na(kpx_2280), kpx_2280.wa2, kpx_2280))
+# DF$semdat = DF$semdat %>% mutate(across(where(is.factor), ~ as_numeric(.)))
+
+# SozioDemographie
 DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
-## Bildung
+
 DF$semdat %<>% mutate(kp1_2320 = if_else(!is.na(kp1_2320)  & !is.na(kp9_2320), kp9_2320, kp1_2320),
                       kp1_2320 = if_else(is.na(kp1_2320) & !is.na(kpa2_2320), kpa2_2320, kp1_2320))
 DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "1,2=0;,3,4=1;5,9=2;else=copy"))
 
 
 DF$semdat %<>% mutate(kp1_2601 = if_else(is.na(kp1_2601), kpa2_2601, kp1_2601))
-DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "1:11=0;12:16=1;else=copy"))
+DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-95=NA;1:11=0;12:16=1"))
 # DF$semdat %<>%  mutate(across(c(all_of(DF$allscales)), ~rec(., rec = "-99,-95,-93=NA; else = copy")))
 
-# Make scales across waves
+# Make scales accross waves
 for (scale_name in names(DF$gles.scales)) {
     DF$semdat <- DF$semdat %>%
       mutate(
@@ -146,9 +153,17 @@ for (scale_name in names(DF$gles.scales)) {
           select(., all_of(DF$gles.scales[[scale_name]])), na.rm = F))}
 
 
-# Wahlabsicht AfD
-DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="NA=NA;322=1;else = 0")))
+# DF$semdat %<>% mutate(across(ends_with(c("_010","_190bb","_430i","_1500","_020", "_770","_780", "_790","_1130","_1290")), ~rec(., rec = "-99,-98,-97,-95,-93,-71=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
+# DF$afd_dat %<>% mutate(across(ends_with("_430i"), ~rec(., rec = "-99:-1=NA; else = copy"))) # %>%   column_to_rownames(var = "lfdn")
 
+# Wahlabsicht AfD
+DF$semdat = DF$semdat %>%  mutate(across(ends_with("190bb"), ~rec(.,rec ="322=1;else = 0")))
+# Geschlecht
+DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+# DF$semdat %<>% mutate(across(contains("_170"), ~rec(., rec = "rev")))
+# DF$semdat %<>% mutate(across(contains("_1621"), ~rec(.,rec = "-99,-95,-93=NA; else = copy")))
+
+# DF$semdat %>% select(where(is.numeric)) %>% descr(.,show = c("type", "n", "range"))
 ```
 ## Aufstockerwellen zusammenführen
 ```{r, eval=FALSE}
@@ -179,8 +194,9 @@ DF$semdat = johnny(DF$semdat,"kp1_1621","kpa2_1621") # Aufstocker a2
 ## Correlation
 ```{r Correlation}
 
+# DF$afd_dat %>% psych::cor.plot(.,stars = T)
 DF$afd_pred = c("wost","school","gjahr","male","kp17_010","tr16", "kp16_160p","pp17", "ex17", "ief17", "eef17","cns16","kp17_020","kp16_1500","kp17_1130","kp17_1290")
-DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
+# DF$semdat %>% select("kp17_430i",DF$afd_pred) %>% psych::cor.plot(.,stars = T)
 
 DF$afd_cor =  
   cor(DF$semdat$kp17_430i, DF$semdat[, DF$afd_pred], use = "pairwise.complete.obs")
@@ -235,28 +251,26 @@ DF$lm$afd_sym3 = lm(kp17_430i ~ school + wost + male + gjahr +
                       kp17_020 + tr16 + pp17 + ex17 + cns16, DF$semdat) 
 DF$lm$afd_sym4 = lm(kp17_430i ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + tr16 + pp17 + ex17 + cns16 +
+                      kp17_020 + tr16 + pp17 + ex17_extrem + cnskp16 +
                       kp17_1130 + kp17_1290, DF$semdat) 
 
 DF$lm$mtrust = lm(kp16_160p ~ school + wost + male + gjahr + 
                       kp16_1500 + kp16_010 +
-                      kp16_020 + pp15 + ex15 + cns16 +
-                      kp16_1130 + kp16_1290, DF$semdat) 
+                      kp16_020 + kp17_popul + kp17_extrem + kp16_consp +
+                      kp17_1130 + kp17_1290, DF$semdat) 
 
 
 DF$lm$afd_wahl = lm(kp17_190bb ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + tr16 + pp17 + ex17 + cns16 +
+                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
                       kp17_1130 + kp17_1290, DF$semdat) 
 DF$glm$afd_wahl = glm(kp17_190bb ~ school + wost + male + gjahr + 
                       kp16_1500 + kp17_010 +
-                      kp17_020 + tr16 + pp17 + ex17 + cns16 +
+                      kp17_020 + kp16_trust + kp17_popul + kp17_extrem + kp17_popul + kp16_consp +
                       kp17_1130 + kp17_1290, DF$semdat, family = 'binomial') 
 
 # glance(DF$glm$afd_wahl)
 # tidy(DF$glm$afd_wahl)
-
-DF$lm %>% lapply(.,performance::check_model)
 
 Modell = c("AfD_Sym_m1","AfD_Sym_m2","AfD_Sym_m3","AfD_Sym_m4","Media Trust","AfD_Wahl_m1")
 map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
@@ -264,6 +278,13 @@ map(DF$lm, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squar
     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
     fmt_number(decimals = 3, columns = "p.value")
 
+# map_df(DF$lm, broom::tidy, conf.int = TRUE, conf.level = 0.5, .id = "model") %>% select(model, term, estimate) %>%
+#     spread(term, estimate) %>% gt
+# 
+# test1 = map_df(DF$lm, broom::tidy, .id = "Model") %>% select(c("estimate","std.error","p.value"))
+# test2 = map_df(DF$lm, parameters::standardise_parameters, .id = "Model") %>% select(c("Model","Parameter","Std_Coefficient"))
+# cbind(test2,test1) %>% gt %>%
+#   fmt_number(decimals = 2) %>% gt_split(row_slice_i = c(5,12,24,36))
 
 results = DF$lm %>%  map(., function(x) {
   tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
@@ -302,5 +323,119 @@ results[[5]][[1]]
 ### AfD-Wahlabsicht Model 1
 ```{r}
 results[[6]][[1]]
+```
+:::
+
+
+```{r, eval=FALSE}
+
+# get_glance_output <- function(x) {
+#   glance(x) %>%
+#     gt() %>%
+#     fmt_number(decimals = 2, columns = c("r.squared", "adj.r.squared", "sigma", "statistic")) %>%
+#     fmt_number(decimals = 3, columns = "p.value")
+# }
+# 
+# get_tidy_output <- function(x) {
+#   lm.beta::lm.beta(x) %>%
+#     tidy(conf.int = TRUE, conf.level = 0.5) %>%
+#     gt() %>%
+#     fmt_number(decimals = 2) %>%
+#     tab_style(
+#       style = cell_fill(color = "lightgreen"),
+#       locations = cells_body(columns = c("term", "estimate", "std_estimate"), rows = p.value < 0.05)
+#     ) %>%
+#     gt_theme_nytimes()
+# }
+# 
+# DF$lm %>% map(function(x) list(get_glance_output(x), get_tidy_output(x)))
+
+
+# 
+# 
+# lapply(DF$lm, function(x) {
+#   glance_output <- broom::glance(x)
+#   tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5)
+#   return(list(glance_output, tidy_output))
+# })
+# 
+# 
+# 
+# # lapply-output in quarto geht nicht!
+# broom::glance(DF$lm$afd_sym3) %>% gt %>% 
+#     fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","sigma","statistic")) %>% 
+#     fmt_number(decimals = 3, columns = "p.value")
+# 
+# lm.beta::lm.beta(DF$lm$afd_sym3) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+#     gt %>% fmt_number(decimals = 2) %>% 
+#     tab_style(style = cell_fill(color = "lightgreen"), 
+#               locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>%
+#   gt_theme_nytimes()
+# 
+# broom::tidy(DF$glm$afd_wahl, conf.int = TRUE, conf.level = 0.5) %>%
+#     gt %>% fmt_number(decimals = 2) %>% 
+#     tab_style(style = cell_fill(color = "lightgreen"), 
+#               locations = cells_body(columns = c(term,estimate), rows = p.value < 0.05)) %>% 
+#   gt_theme_nytimes()
+# test = DescTools::PseudoR2(DF$glm$afd_wahl, which = "all")
+# test %>% as.data.frame() %>% rownames_to_column(var = "PseudoR") %>% gt %>% fmt_number(decimals = 3)
+# 
+# reghelper::beta(DF$glm$afd_wahl)
+# exp(cbind(OR = coef(DF$glm$afd_wahl), confint(DF$glm$afd_wahl))) %>% 
+#   as.data.frame() %>% rownames_to_column(var = "Varible") %>% 
+#   gt %>% fmt_number(decimals = 3)
+
+```
+
+```{r, eval=FALSE}
+
+## some shit here
+
+
+```
+
+
+
+::: {.hidden}
+# Clutter {.unnumbered .unlisted}
+```{r, eval=FALSE}
+#| include: false
+DF$hc17 = DF$semdat %>% select("kp17_010","kp17_1090","kp17_1130") %>% 
+  hcut(., k = 6, stand=T, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+fviz_cluster(DF$hc17)
+fviz_silhouette(DF$hc17)
+w17_clu <- cutree(DF$hc17, k = 6)
+table(w17_clu)
+
+DF$hc19 = DF$semdat %>% select("kp19_010","kp19_1090","kp19_1130") %>% 
+  hcut(., k = 6, stand=T, hc_func = "hclust", hc_method = "ward.D2", hc_metric = "euclidean")
+fviz_cluster(DF$hc19)
+fviz_silhouette(DF$hc19)
+w19_clu <- cutree(DF$hc19, k = 6)
+table(w19_clu)
+
+
+
+DF$semdat = cbind(DF$semdat,w17_clu,w19_clu)
+table(DF$semdat$w17_clu , DF$semdat$w19_clu) %>% rcompanion::cramerV()
+DF$semdat %>% group_by(w17_clu,w19_clu) %>% tally() %>% spread(w19_clu, n)
+
+
+DF$semdat %>% group_by(w17_clu) %>% 
+  summarise(m2 = mean(kp17_010), soec = mean(kp17_1090),autlib = mean(kp17_1130)) %>% 
+  ggplot(aes(x=w17_clu)) + 
+           geom_line(aes(y = m2, color = "PolInt")) +
+           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
+
+
+DF$semdat %>% group_by(w19_clu) %>% 
+  summarise(m2 = mean(kp19_010), soec = mean(kp19_1090),autlib = mean(kp19_1130)) %>% 
+  ggplot(aes(x=w19_clu)) + 
+           geom_line(aes(y = m2, color = "PolInt")) +
+           geom_line(aes(y = soec/1.4, color = "SozÖk")) +
+           geom_line(aes(y = autlib/1.4, color = "Liberal")) +
+    scale_y_continuous(sec.axis = sec_axis(~.*1.4, name=c("Orientierung")))
 ```
 :::

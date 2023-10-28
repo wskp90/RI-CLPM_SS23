@@ -1,0 +1,73 @@
+---
+title: "Mein erster R-Output"
+format: docx
+editor: source
+editor_options: 
+  chunk_output_type: console
+toc: true
+number-sections: true
+---
+
+# Quarto
+## Pakete laden
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,gtsummary,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+
+## Listen vorbereiten
+```{r}
+DF = list()
+```
+
+## Daten laden
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+source(here("script/CLPMulder.R"))
+source(here("script/RICLPMulder.R"))
+# toc()
+```
+
+## Variablen auswählen
+```{r}
+semdat = orgdat %>%
+  select(ends_with(c("_1290","_160p","_1500")) & starts_with(c("kp10","kp12","kp14","kp15","kp16")))
+```
+
+## Daten recodieren
+```{r}
+semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-98,-95,-93=NA;else = copy")))
+```
+
+## Häufigkeiten
+```{r}
+semdat %>% select("kp10_1500") %>% frq
+```
+## Korrelation
+```{r}
+#| fig-height: 5
+#| fig-width: 10
+semdat %>% 
+  psych::cor.plot(.,stars = T, numbers = T, diag = F, upper = F, xlas = 0, MAR = 4)
+
+```
+## OLS Modelle schätzen
+```{r}
+model1 = lm(kp12_1500 ~ kp10_1500 + kp12_160p + kp12_1290, semdat)
+```
+
+## Modellfit
+```{r}
+glance(model1) %>% gt 
+```
+
+## Koeffizienten
+```{r}
+tidy(model1) %>% gt
+```
+

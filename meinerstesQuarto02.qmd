@@ -1,0 +1,90 @@
+---
+title: "mein erstes Doc"
+author: "Name"
+format: docx
+editor: source
+editor_options:
+  chunk_output_type: console
+toc: true
+---
+
+# Vorbereitung
+## Pakete laden
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,gtsummary,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,plm,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+
+## Daten laden
+```{r}
+orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+```
+
+## Variablen
+```{r}
+semdat = orgdat %>%
+  select(ends_with(c("_1290","_160p","_1500")) & starts_with(c("kp10","kp12","kp14","kp15","kp16")))
+
+```
+
+## Long-Datensatz erzeugen
+```{r}
+semdat_panel = orgdat %>% 
+  select(starts_with(c("kp10","kp12","kp14","kp15","kp16")) & ends_with(c("_1290","_160p","_1500"))) %>% 
+  mutate(across(everything(), ~rec(., rec = "-99,-95,-93,-71=NA;else = copy"))) %>% 
+  long_panel(., prefix = "kp", suffix = "_", periods = c("10","12","14","15","16"), label_location = "beginning")
+names(semdat_panel) = c("id","welle","klima","trust","lire")
+```
+
+
+## Recodieren
+```{r}
+semdat %<>% mutate(across(everything(), ~rec(., rec = "-99,-98,-95,-93,-92=NA;else = copy")))
+```
+
+# Output erzeugen
+## Häufigkeiten
+```{r}
+semdat %>% select("kp10_1500") %>% frq(.,show.na = F) %>% as.data.frame() %>% gt %>% gt_theme_nytimes()
+```
+
+## Korrelation
+```{r}
+#| fig-width: 10
+semdat %>% 
+  psych::cor.plot(.,stars = T)
+```
+
+# OLS
+## Modelschätzen
+```{r}
+model1 = lm(kp12_1500 ~ kp10_1500 + kp12_160p + kp12_1290, semdat)
+fe_model <- plm(klima ~ lire, semdat_panel, index = c("id", "welle"), model = "within")
+re_model <- plm(klima ~ lire, semdat_panel, index = c("id", "welle"), model = "random")
+plm::phtest(fe_model,re_model)
+```
+
+## Modellfit
+```{r}
+glance(model1) %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs"))%>% gt %>% fmt_number(decimals = 3) %>% fmt_number(decimals = 0, columns = "nobs") %>% gt_theme_nytimes()
+
+glance(fe_model) %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs"))%>% gt %>% fmt_number(decimals = 3) %>% fmt_number(decimals = 0, columns = "nobs") %>% gt_theme_nytimes()
+
+glance(re_model) %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs"))%>% gt %>% fmt_number(decimals = 3) %>% fmt_number(decimals = 0, columns = "nobs") %>% gt_theme_nytimes()
+```
+
+## Koeffizienten
+```{r}
+tidy(model1) %>% gt %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+lm.beta::lm.beta(model1) %>% broom::tidy() %>% gt %>% fmt_number(decimals = 3) %>% gt_theme_nytimes()
+```
+
+## ICC-Koeffizienten
+```{r}
+semdat %>% 
+  select(contains("_1500")) %>% irr::icc()
+```
+
