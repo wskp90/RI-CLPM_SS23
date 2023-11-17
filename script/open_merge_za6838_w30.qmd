@@ -1,0 +1,89 @@
+---
+title: "Open and Merge GLES Panel"
+subtitle: "HRS: Survey"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *open 6 merge ZA6838-ZA7729*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+format: html
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+editor: source
+execute: 
+  echo: false
+  eval: true
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+  rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,here,fs,usethis,labelled,janitor,qs)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load SPSS-Data
+
+```{r}
+tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+DF$za7729w24 = read_spss(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/ZA7730_v1-0-0.sav"),drop.labels = T)
+
+toc()
+```
+
+## Merge Waves
+
+```{r}
+tic()
+
+DF$za6838kum = full_join(DF$orgdat,DF$za7729w24, by= "lfdn", suffix = c(".w23", ".w24"))
+# za6838kum = za6838kum %>% rename_with(~str_remove(., '.w9'))
+toc()
+```
+
+## Save DATA
+
+```{r}
+qsave(DF$za6838kum, file = paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
+```
