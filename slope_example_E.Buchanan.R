@@ -115,3 +115,4 @@ crime.fit5 = growth(crime.model5,
 summary(crime.fit5, standardized=TRUE)
 parameterestimates(crime.fit5, standardized=TRUE) ##CIs for parameters
 fitmeasures(crime.fit5) ##fit indices
+lavTestLRT(crime.fit1, crime.fit2, crime.fit3, crime.fit4, crime.fit5)

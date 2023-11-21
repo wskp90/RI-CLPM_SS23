@@ -1,7 +1,7 @@
 ---
-title: "mein erstes Doc"
+title: "mein erster Output"
 author: "Name"
-format: docx
+format: html # Für Word: 'html' einfach durch 'docx' ersetzen
 editor: source
 execute: 
   echo: false
@@ -76,7 +76,7 @@ semdat %>%
 ```{r}
 semdat %<>% rename(x1 = kp10_160p, x2 = kp12_160p, x3 = kp14_160p,
                   y1 = kp10_1290, y2 = kp12_1290, y3 = kp14_1290)
-
+semdat = semdat %>% mutate(group = sample(c(1, 2), size = n(), replace = TRUE))
 ```
 
 # SEM
@@ -128,14 +128,20 @@ broom::tidy(clpm.fit) %>% filter(., op =="~") %>% select(., c(term,op, estimate,
 
 ### Modell schätzen Gruppenvergleich
 ```{r}
-clpmg.fit <- lavaan::sem(clpm.def, data=semdat, missing="ML", estimator = "MLR",mimic="Mplus", meanstructure = T, int.ov.free = T, group="pol_int")
+clpmg.fit1 <- lavaan::sem(clpm.def, data=semdat, missing="ML", estimator = "MLR",mimic="Mplus", meanstructure = T, int.ov.free = T, group="pol_int")
+clpmg.fit2 <- lavaan::sem(clpm.def, data=semdat, missing="ML", estimator = "MLR",mimic="Mplus", meanstructure = T, int.ov.free = T, group="pol_int", group.equal = c("regressions","lv.covariances"))
 ```
 
 ### Modell Fit
 ```{r}
-broom::glance(clpmg.fit) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
+broom::glance(clpmg.fit1) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
   gt %>%
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::glance(clpmg.fit2) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+lavTestLRT(clpmg.fit1,clpmg.fit2) %>% as.data.frame() %>% rownames_to_column(var = "Model") %>% gt %>% fmt_number(decimals = 3, columns = "Pr(>Chisq)")
+
 ```
 
 ### Koeeffizienten
@@ -206,7 +212,7 @@ broom::glance(riclpm.fit) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>%
 ### Koeffizienten
 ```{r}
 
-broom::tidy(riclpm.fit) %>% filter(., op =="~") %>% select(., c(term,group, op, estimate,std.error,p.value,std.all)) %>% 
+broom::tidy(riclpm.fit) %>% filter(., op =="~") %>% select(., c(term, op, estimate,std.error,p.value,std.all)) %>% 
   gt %>% 
   fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value)
 ```

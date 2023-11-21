@@ -74,9 +74,10 @@ DF = list()
 ```{r}
 # load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
 # tic()
-DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
 source(here("script/CLPMulder.R"))
 source(here("script/RICLPMulder.R"))
+source(here("script/LGCMBuchanan.R"))
 # toc()
 ```
 
@@ -93,7 +94,7 @@ descr(DF$semdat, show = c("type", "n", "range"))
 ## Recode Vars for sem
 ```{r}
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
-DF$semdat = DF$semdat %>% mutate(across(everything(),  ~rec(., rec = "NA=-99; else = copy")))
+# DF$semdat = DF$semdat %>% mutate(across(everything(),  ~rec(., rec = "NA=-99; else = copy")))
 DF$semdat %>% descr()
 # DF$semdat = DF$semdat %>% mutate(afd_max = if_any(contains("430i"), ~.x > 1)) # Alle identifizieren, die AfD nicht immer scheiße finden.
 
@@ -107,12 +108,60 @@ go_away <- function(x, na_values) {
   return(x)
 }
 DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
-
 descr(DF$semdat, show = c("type", "n", "range"))
 
 # DF$semdat = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
 ```
 
+# Descriptives
+## Plot Y
+```{r}
+summary_data <- DF$semdat %>% select(ends_with("430i")) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+# summary_data = summary_data %>% mutate(time = as_factor(time))
+# Create the plot
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = "Mean with 95% CI for AfD-Sympathy",
+       x = "Wave",
+       y = "AfD-Sympathy") +
+  ylim(2,4) +
+theme_minimal()
+```
+## Plot X
+```{r}
+summary_data <- DF$semdat %>% select(ends_with("160p")) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+# summary_data = summary_data %>% mutate(time = as_factor(time))
+# Create the plot
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = "Mean with 95% CI for Media Trust",
+       x = "Wave",
+       y = "Media Trust") +
+  ylim(2.5,3) +
+theme_minimal()
+```
+
+
+
+## Prepare for SEM
 ## Rename Vars for sem
 ```{r}
 
@@ -122,6 +171,7 @@ DF$semdat %<>% rename(x1 = kp9_160p, x2 = kp10_160p, x3 = kp12_160p, x4 = kp14_1
                       y1 = kp9_430i, y2 = kp10_430i, y3 = kp12_430i, y4 = kp14_430i, y5 = kp15_430i, y6 = kp16_430i)
 DF$semdat %<>% rename(z1 = kp15_1500)
 ```
+
 
 
 ## Check Correlations
@@ -149,6 +199,55 @@ DF$semdat %>%
 ```
 
 # SEM
+## Growth of Constructs
+```{r Estimate Growth Models}
+DF$lv_mod$gm$m6y1 = lavaan::growth(DF$modef$gm$m6y1, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m6y2 = lavaan::growth(DF$modef$gm$m6y2, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m6y3 = lavaan::growth(DF$modef$gm$m6y3, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m6y4 = lavaan::growth(DF$modef$gm$m6y4, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m6y5 = lavaan::growth(DF$modef$gm$m6y5, data=DF$semdat, missing="ML", estimator = "MLR")
+```
+## Compare Model Fit
+```{r G-Model Fit}
+map(DF$lv_mod$gm, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>%  
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+```
+## GM Coeeficients
+```{r}
+gm_coeffd = DF$lv_mod$gm %>%  map(., function(x) {
+  tidy_output <- broom::tidy(x) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+```
+
+::: {.panel-tabset}
+### LGCM 3 Wellen Mod1
+```{r}
+gm_coeffd$m6y1[[1]]
+```
+### LGCM 3 Wellen Mod2
+```{r}
+gm_coeffd$m6y2[[1]]
+```
+### LGCM 3 Wellen Mod3
+```{r}
+gm_coeffd$m6y3[[1]]
+```
+### LGCM 3 Wellen Mod4
+```{r}
+gm_coeffd$m6y4[[1]]
+```
+### LGCM 3 Wellen Mod5
+```{r}
+gm_coeffd$m6y5[[1]]
+```
+:::
+
 ## Estimate Models
 ```{r Estimate Models}
 tic()
