@@ -1,0 +1,109 @@
+# mean latent intercept and constrained residual variances
+DF$modef$gm$m3y1 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3
+i~~0*i
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+'
+# mean latent intercept that is allowed to vary, and constrained residual variances
+DF$modef$gm$m3y2 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+'
+# mean latent intercept that is allowed to vary, 
+##mean latent slope, and constrained residual variances
+DF$modef$gm$m3y3 <- '
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3
+s~0*1
+s~~0*i
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+'
+# mean latent intercept that is allowed to vary, 
+# mean latent slope that is allowed to vary, and constrained residual variances
+DF$modef$gm$m3y4 <- '
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+'
+## unconstrained model
+DF$modef$gm$m3y5 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3
+'
+
+# mean latent intercept and constrained residual variances
+DF$modef$gm$m4y1 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+i~~0*i
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+y4~~r*y4
+'
+# mean latent intercept that is allowed to vary, and constrained residual variances
+DF$modef$gm$m4y2 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+y4~~r*y4
+'
+# mean latent intercept that is allowed to vary, 
+##mean latent slope, and constrained residual variances
+DF$modef$gm$m4y3 <- '
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3 + 3*y4
+s~0*1
+s~~0*i
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+y4~~r*y4
+'
+# mean latent intercept that is allowed to vary, 
+# mean latent slope that is allowed to vary, and constrained residual variances
+DF$modef$gm$m4y4 <- '
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3 + 3*y4
+# residual variances
+y1~~r*y1
+y2~~r*y2
+y3~~r*y3
+y4~~r*y4
+'
+## unconstrained model
+DF$modef$gm$m4y5 <-'
+# intercept
+i =~ 1*y1 + 1*y2 + 1*y3 + 1*y4
+# slope
+s =~ 0*y1 + 1*y2 + 2*y3 + 3*y4
+'

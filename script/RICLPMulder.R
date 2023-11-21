@@ -53,7 +53,7 @@ Lx3 =~ 1*x3
 Ly1 =~ 1*y1
 Ly2 =~ 1*y2
 Ly3 =~ 1*y3
-Lz1 =~ 1*y1
+Lz1 =~ 1*z1
 Lz2 =~ 1*z2
 Lz3 =~ 1*z3
 
@@ -68,9 +68,12 @@ Ly1 ~~ Lz1 # Covariance
 
 # Estimate covariances between residuals of within-person centered variables 
 # (i.e., innovations)
-Lx2 ~~ Ly2 + Lz2
-Lx3 ~~ Ly3 + Lz3
-
+Lx2 ~~ Ly2
+Lx2 ~~ Lz2
+Ly2 ~~ Lz2
+Lx3 ~~ Ly3
+Lx3 ~~ Lz3
+Ly3 ~~ Lz3
 
 # Estimate variance and covariance of random intercepts
 RIx ~~ RIx
@@ -86,9 +89,78 @@ Ly1 ~~ Ly1
 Lz1 ~~ Lz1
 Lx2 ~~ Lx2 # Residual variances
 Ly2 ~~ Ly2 
+Lz2 ~~ Lz2
 Lx3 ~~ Lx3 
 Ly3 ~~ Ly3
-Lz3 ~~ Lz3'
+Lz3 ~~ Lz3
+'
+
+## RI-CLPModell 3 Wellen, 3 Konstrukte uncontsrained ####
+DF$modef$ri$m3k <-
+'
+#RANDOM INTERCEPTS
+RIx =~ 1*x1 + 1*x2 + 1*x3
+RIy =~ 1*y1 + 1*y2 + 1*y3
+RIz =~ 1*z1 + 1*z2 + 1*z3
+
+#LATENT FACTORS
+Lx1 =~ 1*x1 #each factor loading set to 1
+Lx2 =~ 1*x2 
+Lx3 =~ 1*x3
+Ly1 =~ 1*y1
+Ly2 =~ 1*y2
+Ly3 =~ 1*y3
+Lz1 =~ 1*z1
+Lz2 =~ 1*z2
+Lz3 =~ 1*z3
+
+
+#VARIANCES @0 OF OBSERVED SCORES
+x1 ~~ 0*x1
+x2 ~~ 0*x2
+x3 ~~ 0*x3
+y1 ~~ 0*y1
+y2 ~~ 0*y2
+y3 ~~ 0*y3
+z1 ~~ 0*z1
+z2 ~~ 0*z2
+z3 ~~ 0*z3
+
+#LATENT FACTORS COVARIANCES @0
+RIx ~~ 0*Lx1
+RIx ~~ 0*Ly1
+RIx ~~ 0*Lz1
+RIy ~~ 0*Lx1
+RIy ~~ 0*Ly1
+RIy ~~ 0*Lz1
+RIz ~~ 0*Lx1
+RIz ~~ 0*Ly1
+RIz ~~ 0*Lz1
+
+#CORRELATIONS
+Lx3 ~~ Ly3 + Lz3
+Lx2 ~~ Ly2 + Lz2
+Lx1 ~~ Ly1 + Lz1
+Ly3 ~~ Lz3
+Ly2 ~~ Lz2
+Ly1 ~~ Lz1
+
+RIx ~~ RIy + RIz
+RIy ~~ RIz
+
+#Stability & LAGGED EFFECTS
+Lx3 ~ Lx2 + Ly2 + Lz2 
+Lx2 ~ Lx1 + Ly1 + Lz1
+
+Ly3 ~ Ly2 + Lx2 + Lz2
+Ly2 ~ Ly1 + Lx1 + Lz1
+
+Lz3 ~ Lz2 + Lx2 + Ly2
+Lz2 ~ Lz1 + Lx1 + Ly1
+'
+
+
+
 
 ## constrained ####
 DF$modef$ri$m3c <- '

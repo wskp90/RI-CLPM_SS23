@@ -77,6 +77,7 @@ DF = list()
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
 source(here("script/CLPMulder.R"))
 source(here("script/RICLPMulder.R"))
+source(here("script/LGCMBuchanan.R"))
 # toc()
 ```
 
@@ -152,6 +153,57 @@ DF$semdat %>%
 ```
 
 # SEM
+## Growth of Constructs
+```{r Estimate Growth Models}
+DF$lv_mod$gm$m3y1 = lavaan::growth(DF$modef$gm$m3y1, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m3y2 = lavaan::growth(DF$modef$gm$m3y2, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m3y3 = lavaan::growth(DF$modef$gm$m3y3, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m3y4 = lavaan::growth(DF$modef$gm$m3y4, data=DF$semdat, missing="ML", estimator = "MLR")
+DF$lv_mod$gm$m3y5 = lavaan::growth(DF$modef$gm$m3y5, data=DF$semdat, missing="ML", estimator = "MLR")
+```
+## Compare Model Fit
+```{r G-Model Fit}
+map(DF$lv_mod$gm, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>%  
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+```
+## GM Coeeficients
+```{r}
+gm_coeffd = DF$lv_mod$gm %>%  map(., function(x) {
+  tidy_output <- broom::tidy(x) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+```
+
+::: {.panel-tabset}
+### LGCM 3 Wellen Mod1
+```{r}
+gm_coeffd$m3y1[[1]]
+```
+### LGCM 3 Wellen Mod2
+```{r}
+gm_coeffd$m3y2[[1]]
+```
+### LGCM 3 Wellen Mod3
+```{r}
+gm_coeffd$m3y3[[1]]
+```
+### LGCM 3 Wellen Mod4
+```{r}
+gm_coeffd$m3y4[[1]]
+```
+### LGCM 3 Wellen Mod5
+```{r}
+gm_coeffd$m3y5[[1]]
+```
+:::
+
+
+
 ## Estimate Models
 ```{r Estimate Models}
 tic()
@@ -159,22 +211,22 @@ DF$lv_mod$cl$m3c <- lavaan(DF$modef$cl$m3c, data=DF$semdat, missing="ML", estima
 DF$lv_mod$cl$m3u <- lavaan(DF$modef$cl$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m3c <- lavaan(DF$modef$ri$m3c, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_mod$ri$m3u <- lavaan(DF$modef$ri$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_mod$ri$m33u <- lavaan::sem(DF$modef$ri$m33u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m33u <- lavaan(DF$modef$ri$m33u, data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T,int.ov.free = T)
 toc()
 ```
 
 ## Compare Model Fit
 ```{r Model fit}
 CL_Modell = c("CLPM 3 fixed","CLPM 3 free")
-RI_Modell = c("RI-CLPM 3 fixed","RI-CLPM 3 free")
+RI_Modell = c("RI-CLPM 3 fixed","RI-CLPM 3 free","RI-CLPM 3 3k")
 map(DF$lv_mod$cl, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(CL_Modell,.) %>% 
   gt %>%
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
 map(DF$lv_mod$ri, broom::glance) %>% list_rbind() %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% cbind(RI_Modell,.) %>% 
   gt %>%
     fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
-
 ```
+
 
 ## Graphs
 ```{r Prepare Graphs}
@@ -216,6 +268,13 @@ plot(ri_graph_list$m3c)
 plot(ri_graph_list$m3u)
 ```
 :::
+```{r}
+RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t3k3_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$ric_graph = prepare_graph(DF$lv_mod$ri$m33u, layout = RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+
+```
 
 ## Coefficients
 
@@ -269,5 +328,14 @@ ri_crosslagged$m3c[[1]]
 ### RI-CLPM 3 Wellen free
 ```{r}
 ri_crosslagged$m3u[[1]]
+```
+### RI-CLPM 3 Wellen free
+```{r}
+broom::tidy(DF$lv_mod$ri$m33u) %>% filter(.,(op =="~" & grepl("Lx", term) & grepl("Ly", term) )|(op =="~" & grepl("Lx", term) & grepl("Lz", term))|(op =="~" & grepl("Ly", term) & grepl("Lz", term))) %>%
+                                     select(., c(term, op, estimate,std.error,p.value,std.all)) %>%
+                                     gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
 ```
 :::
