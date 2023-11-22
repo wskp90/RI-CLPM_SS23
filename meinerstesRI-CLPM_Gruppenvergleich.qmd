@@ -1,7 +1,7 @@
 ---
 title: "mein erster Output"
 author: "Name"
-format: html # Für Word: 'html' einfach durch 'docx' ersetzen
+format: html 
 editor: source
 execute: 
   echo: false
@@ -146,7 +146,7 @@ lavTestLRT(clpmg.fit1,clpmg.fit2) %>% as.data.frame() %>% rownames_to_column(var
 
 ### Koeeffizienten
 ```{r}
-broom::tidy(clpmg.fit) %>% filter(., op =="~") %>% select(., c(group,term,op, estimate,std.error,p.value,std.all)) %>% 
+broom::tidy(clpmg.fit1) %>% filter(., op =="~") %>% select(., c(group,term,op, estimate,std.error,p.value,std.all)) %>% 
   gt %>% 
   fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>% gt_split(row_every_n = 8)
 ```
@@ -198,7 +198,8 @@ Ly3 ~~ Ly3 '
 ### Modell schätzen
 ```{r}
 riclpm.fit <- lavaan::lavaan(riclpm.def, data=semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-
+riclpm.fit1 <- lavaan::lavaan(riclpm.def, data=semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int")
+riclpm.fit2 <- lavaan::lavaan(riclpm.def, data=semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int", group.equal = "regressions")
 ```
 
 ### Modell Fit
@@ -206,6 +207,13 @@ riclpm.fit <- lavaan::lavaan(riclpm.def, data=semdat, missing="ML", estimator = 
 broom::glance(riclpm.fit) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
   gt %>%
   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::glance(riclpm.fit1) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::glance(riclpm.fit2) %>% select(c(cfi,tli,agfi,rmsea,srmr)) %>% 
+  gt %>%
+  fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+lavTestLRT(riclpm.fit1,riclpm.fit2) %>% as.data.frame() %>% rownames_to_column(var = "Model") %>% gt %>% fmt_number(decimals = 3, columns = "Pr(>Chisq)")
 ```
 
 
