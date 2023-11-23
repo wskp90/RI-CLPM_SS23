@@ -6,8 +6,8 @@ project:
 author:
 - "Reimar ZEH"
 - "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
-- "Filename: *Recode ZA6838-ZA7730*"
-date: "`r format(Sys.time(), '%m.%d.%Y')`"
+date: last-modified
+date-format: "DD.MM.YYYY"
 editor: source
 toc: true
 number-sections: true
@@ -25,9 +25,3 @@ format:
       body-width: 1500px
       margin-width: 200px
       gutter-width: 1.5rem
-execute: 
-  echo: true
-  eval: true
-  warning: false
-editor_options: 
-  chunk_output_type: console
