@@ -3,3 +3,31 @@ project:
   output-dir: docs
   preview:
     browser: true
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7730*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+    page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1500px
+      margin-width: 200px
+      gutter-width: 1.5rem
+execute: 
+  echo: true
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console

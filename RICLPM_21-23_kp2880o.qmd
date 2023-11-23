@@ -26,7 +26,7 @@ DF = list(
     wave1 = "kp22",
     wave2 = "kp23",
     wave3 = "kp24",
-    x = "_2880bb",
+    x = "_2880o",
     y = "_430i"
   )
 )
