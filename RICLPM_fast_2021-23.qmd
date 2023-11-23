@@ -1,0 +1,222 @@
+---
+title: "RECODE GLES Panel"
+subtitle: "MediaTrust vs AfD Sympathie 2021 - 2023"
+author:
+- "Reimar ZEH"
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+- "Filename: *Recode ZA6838-ZA7730*"
+date: "`r format(Sys.time(), '%m.%d.%Y')`"
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+    page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1500px
+      margin-width: 200px
+      gutter-width: 1.5rem
+execute: 
+  echo: false
+  eval: true
+  warning: false
+editor_options: 
+  chunk_output_type: console
+---
+
+# Session Setup
+
+## Global settings & Notes
+
+```{r}
+rm(list= ls()) # start clean ####
+# show chunk outputs in R-Markdown
+knitr::opts_chunk$set(echo = TRUE)
+
+# global settings
+options(
+  scipen = 999, # deactivate scientific notation
+  digits = 3, # activate the required number of decimal places
+  max.print = 1000000,
+  tibble.print_max = 100000,
+  tibble.print_min = 100000
+)
+
+# setting a seed
+set.seed(42)
+```
+
+## Load Packages
+
+```{r}
+rm(list= ls()) # start clean ####
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+
+## Prepare Lists
+
+```{r}
+DF = list()
+```
+
+## Load Data
+
+```{r}
+# load(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.Rda"))
+# tic()
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
+source(here("script/CLPMulder.R"))
+source(here("script/RICLPMulder.R"))
+source(here("script/LGCMBuchanan.R"))
+# toc()
+```
+
+
+# Prepare Analysis
+## Select Vars
+```{r Select and Recode}
+DF$semdat = DF$orgdat %>%
+  select(ends_with(c("_430i","_2880bb")) & starts_with(c("kp22","kp23","kp24")))
+descr(DF$semdat, show = c("type", "n", "range"))
+```
+
+
+## Recode Vars for sem
+```{r}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
+# DF$semdat = DF$semdat %>% mutate(across(everything(),  ~rec(., rec = "NA=-99; else = copy")))
+DF$semdat %>% descr()
+# DF$semdat = DF$semdat %>% mutate(afd_max = if_any(contains("430i"), ~.x > 1)) # Alle identifizieren, die AfD nicht immer scheiße finden.
+
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+descr(DF$semdat, show = c("type", "n", "range"))
+
+# DF$semdat = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
+```
+
+# Descriptives
+## Plot Y
+```{r}
+summary_data <- DF$semdat %>% select(ends_with("430i")) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+# summary_data = summary_data %>% mutate(time = as_factor(time))
+# Create the plot
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = "Mean with 95% CI for AfD-Sympathy",
+       x = "Wave",
+       y = "AfD-Sympathy") +
+  ylim(2,4) +
+theme_minimal()
+```
+## Plot X
+```{r}
+summary_data <- DF$semdat %>% select(ends_with("_2880bb")) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+# summary_data = summary_data %>% mutate(time = as_factor(time))
+# Create the plot
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = "Mean with 95% CI for Media Trust",
+       x = "Wave",
+       y = "Media Trust") +
+theme_minimal()
+```
+# Prepare for SEM
+## Rename Vars for sem
+```{r}
+DF$semdat %<>% rename(x1 = kp22_2880bb, x2 = kp23_2880bb, x3 = kp24_2880bb,
+                      y1 = kp22_430i,  y2 = kp23_430i,  y3 = kp24_430i)
+```
+
+
+## Check Correlations
+```{r}
+DF$semdat %>% 
+  psych::cor.plot(.,stars = T)
+# DF$semdat %>% select(ends_with(c("_160p","_430i"))) %>% 
+#   gather(key, value) %>% drop_na() %>%
+#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
+#   ggplot(aes(x = value, color = Welle)) +
+#   geom_density(adjust = 1.6) +
+#   facet_wrap(vars(Var)) +
+#   theme_classic()
+
+```
+
+## Check ICC
+```{r}
+# ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
+
+DF$semdat %>% 
+  select(contains(c("x"))) %>% irr::icc()
+DF$semdat %>%
+  select(contains(c("y"))) %>% irr::icc()
+```
+
+# SEM
+## Estimate Models
+```{r Estimate Models}
+tic()
+DF$lv_mod$cl$m3u <- lavaan(DF$modef$cl$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_mod$ri$m3u <- lavaan(DF$modef$ri$m3u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+toc()
+```
+
+## Compare Model Fit
+```{r Model fit}
+broom::glance(DF$lv_mod$cl$m3u) %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>%
+  gt %>%   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+broom::glance(DF$lv_mod$ri$m3u) %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>%
+  gt %>%   fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% gt_theme_nytimes()
+
+```
+
+
+## Graphs
+```{r Prepare Graphs}
+DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+
+DF$cl_graph = prepare_graph(DF$lv_mod$cl$m3u, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$cl_graph)
+
+DF$ric_graph = prepare_graph(DF$lv_mod$ri$m3u, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+```
+
