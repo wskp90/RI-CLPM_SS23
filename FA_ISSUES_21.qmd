@@ -1,0 +1,107 @@
+---
+title: "GLES Panel"
+subtitle: "Faktorenanalyse Issues"
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: true
+  eval: true
+  warning: false
+---
+
+## Global settings & Notes
+```{r}
+rm(list= ls()) # start clean ####
+set.seed(42)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,parameters,broom,performance)
+
+DF = list()
+```
+
+## Prepare Analysis
+### Load Data
+```{r Laod Data}
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
+```
+
+### generate Lists for scales
+```{r generate Lists for scales}
+DF$issues  =c("kp22_1130","kp22_2880al","kp22_2880bb","kp22_2880bc","kp22_2880bn","kp22_2880bz",
+              "kp22_2880ca","kp22_1090","kp22_1260","kp22_1290","kp22_2880ag","kp22_2880ah",
+              "kp22_2880ai","kp22_2880an1","kp22_2880be","kp22_2880bi","kp22_2880bk","kp22_2880bl",
+              "kp22_2880bm","kp22_2880br","kp22_2880cc","kp22_2880cd","kp22_2880ce","kp22_2880cf",
+              "kp22_2880ch","kp22_2880cl","kp22_2880cm","kp22_2880cn","kp22_2880d","kp22_2880g",
+              "kp22_2880o","kp22_2880p","kp22_2880t","kp22_2880u","kp22_2880v","kp22_2880y")
+
+# DF$allscales = unlist(DF$gles.scales) %>% as.vector()
+```
+
+### Select Vars
+```{r Select Vars}
+
+DF$fadat = DF$orgdat %>%
+  select("lfdn", "kp21_160p1", "kp22_020","kp22_430i",all_of(DF$issues))
+```
+
+### Recode Vars
+```{r Recode Vars}
+# Geburtsjahr als numerisches Var  erzeugen
+DF$fadat = DF$fadat %>% mutate(across(everything(), ~ as_numeric(.))) # Sonst geht mutate in die Hose
+
+# DF$fadat = DF$fadat %>% mutate(kp7_1610 = rec(kp7_1610, rec = "-97=1;else=copy")) # Social Media O-Tage
+# DF$fadat = DF$fadat %>% mutate(kp8_1702 = ifelse(kp8_1701aa == 2, 1, kp8_1702)) # SPON 0-Tage
+
+# Alles Missinsg sammeln und NA machen
+negative_indices <- which(DF$fadat < 0, arr.ind = TRUE)
+DF$negvals <- DF$fadat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$fadat = DF$fadat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+
+# Create a dataframe to store variable labels and names
+DF$label <- tibble(
+  Variable = character(),  # Column for variable names
+  label = character()      # Column for variable labels
+)
+
+# Extract variable labels and names
+for (col in names(DF$fadat)) {
+  variable_label <- label(DF$fadat[[col]])
+  DF$label <- DF$label %>% 
+    add_row(Variable = col, label = variable_label)
+}
+DF$label <- DF$label %>%
+  mutate(label = str_replace(label, "Ego-Positionen: ", ""))
+
+```
+
+## Analysis
+### Factor Analysis
+```{r}
+DF$fa1 = DF$fadat %>% select(DF$issues)
+performance::check_factorstructure(DF$fa1)
+parameters::n_factors(DF$fa1) %>% gt %>% gt_theme_nytimes()
+
+DF$fa$fa1.fit = fa(DF$fa1, nfactors = 8, fm = "ml", rotate = "oblimin", scores = "regression", use = "pairwise.complete.obs")
+# DF$fa$load = DF$fa$fa1.fit %>% model_parameters(sort=T, threshold = "max") %>%
+#   as.data.frame()
+# DF$fa$load = left_join(DF$fa$load,DF$label,by = "Variable")  
+# DF$fa$load %>% gt %>% cols_move_to_start(columns = label)
+
+DF$fa$fa1.fit %>%
+  model_parameters(sort = TRUE, threshold = "max") %>%
+  as.data.frame() %>%
+  left_join(DF$label, by = "Variable") %>%
+  gt() %>%
+  cols_move_to_start(columns = label) %>% cols_hide(columns = c(Complexity, Uniqueness)) %>% 
+  sub_missing(columns = everything(),
+  rows = everything(),
+  missing_text = "-") %>% gt_theme_nytimes()
+```

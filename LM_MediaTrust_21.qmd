@@ -1,0 +1,342 @@
+---
+title: "GLES Panel"
+subtitle: "Medienvertrauen explained"
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: true
+  eval: true
+  warning: false
+---
+
+## Global settings & Notes
+```{r}
+rm(list= ls()) # start clean ####
+set.seed(42)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+```
+## Prepare Lists
+```{r}
+DF = list()
+```
+
+# Prepare Analysis
+## Load Data
+```{r Laod Data}
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
+```
+
+## generate Lists for scales
+```{r generate Lists for scales}
+DF$vnam_list <- list(
+  # tr = c("_160a", "_160b", "_160j", "_160p", "_160q"),
+  pp = c("_3103a","_3103b","_3103c","_3103d","_3103e","_3103f","_3103g","_3103h"),
+  ex = c("_060e","_060l","_060i","_060j","_060b","_060d"),
+  ief = c("_050k","_050h"),
+  eef = c("_050a","_050e"))
+DF$vwav_list <- list(#tr = 20,
+  pp = 20,
+  ex = 20,
+  ief = 20,
+  eef = 20)
+# Loop through vwav and vnam lists
+for (type in names(DF$vnam_list)) {
+  for (welle in DF$vwav_list[[type]]) {
+    variable_names <- paste("kp", welle, DF$vnam_list[[type]], sep = "")
+    DF$gles.scales[[paste0(type, welle)]] <- unlist(variable_names)
+  }
+}
+DF$allscales = unlist(DF$gles.scales) %>% as.vector()
+```
+
+## Select Vars
+```{r Select Vars}
+
+DF$semdat = DF$orgdat %>%
+  select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kpa1_2320", "kpx_2290s",
+         contains("_1621"),
+         all_of(DF$allscales),
+         starts_with(c("kp17","kp18")) & contains(c("_1661","_1681")),
+         starts_with(c("kp20","kp21","kp19")) & ends_with(c("_010","_160p1","_1500","_020","_1600","_1610","_1701aa","_1702","_1933","_430i")))
+
+```
+## Recode Vars
+```{r Recode Vars}
+# Geburtsjahr als numerisches Var  erzeugen
+DF$semdat = DF$semdat %>% 
+  mutate(gjahr = case_when(kpx_2290s == "1955 und frueher" ~ 1955, .default = as.numeric(kpx_2290s)))
+
+DF$semdat = DF$semdat %>% 
+  mutate(alter = 2023 - gjahr)
+DF$semdat %>% select("alter") %>% descr()
+
+
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.))) # Sonst geht mutate in die Hose
+
+# DF$semdat = DF$semdat %>% mutate(kp7_1610 = rec(kp7_1610, rec = "-97=1;else=copy")) # Social Media O-Tage
+# DF$semdat = DF$semdat %>% mutate(kp8_1702 = ifelse(kp8_1701aa == 2, 1, kp8_1702)) # SPON 0-Tage
+
+# Alles Missinsg sammeln und NA machen
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+
+# SozioDemographie
+DF$semdat = DF$semdat %>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+
+DF$semdat %<>% mutate(kp1_2320 = if_else(is.na(kp1_2320) & !is.na(kpa1_2320), kpa1_2320, kp1_2320))
+DF$semdat %<>% mutate(school = rec(kp1_2320, rec = "1,2=0;,3,4=1;5,9=2;else=copy"))
+
+DF$semdat %<>% mutate(wost = rec(kp1_2601, rec = "-95=NA;1:11=0;12:16=1"))
+
+# Make scales accross waves
+for (scale_name in names(DF$gles.scales)) {
+    DF$semdat <- DF$semdat %>%
+      mutate(
+        !!paste(scale_name, sep = "") := rowSums(
+          select(., all_of(DF$gles.scales[[scale_name]])), na.rm = F))}
+
+
+# Geschlecht
+DF$semdat %<>% mutate(male = rec(kpx_2280, rec = "2=0;else=copy"))
+# DF$semdat %>% select(contains("1661f")) %>% frq
+```
+
+# Analysis
+## Correlation
+::: {.panel-tabset}
+### Medienvertrauen
+```{r MediaTrust}
+
+# DF$orgdat %>% select("kp20_160p1") %>% frq %>% as.data.frame() %>% gt
+
+DF$trust_pred = c("kp20_020","wost","school","alter","male","pp20", "ex20", "ief20", "eef20","kp20_1600","kp20_1933","kp19_1610","kp20_010",
+                  "kp18_1681a","kp18_1681b","kp18_1681c","kp18_1681d",
+                  "kp17_1661a","kp17_1661c","kp17_1661d","kp17_1661e")
+
+DF$trust_cor =  
+  cor(DF$semdat$kp20_160p1, DF$semdat[, DF$trust_pred], use = "pairwise.complete.obs")
+DF$trust_cor = DF$trust_cor[1,]
+DF$trust_cor = data.frame(variable = DF$trust_pred, KorKof = DF$trust_cor) 
+
+
+ggplot(DF$trust_cor, aes(y = reorder(variable, -KorKof), x = KorKof)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.5) +
+  geom_text(aes(label = round(KorKof, 2)), hjust = 1.2, size = 3) +
+  labs(title = "Korrelation mit Medienvertrauen", y = "Variables", x = "Correlation") +
+  theme_minimal() + xlim(-0.6, +0.6)
+```
+
+### Demokratiezufriedenheit
+```{r DemSat}
+# DF$orgdat %>% select("kp20_020") %>% frq %>% as.data.frame() %>% gt
+
+DF$demsat_pred = c("kp20_160p1","wost","school","alter","male","pp20", "ex20", "ief20", "eef20","kp20_1600","kp20_1933","kp19_1610","kp20_010",
+                  "kp18_1681a","kp18_1681b","kp18_1681c","kp18_1681d",
+                  "kp17_1661a","kp17_1661c","kp17_1661d","kp17_1661e")
+
+DF$demsat_cor =  
+  cor(DF$semdat$kp20_020, DF$semdat[, DF$demsat_pred], use = "pairwise.complete.obs")
+DF$demsat_cor = DF$demsat_cor[1,]
+DF$demsat_cor = data.frame(variable = DF$demsat_pred, KorKof = DF$demsat_cor) 
+
+
+ggplot(DF$demsat_cor, aes(y = reorder(variable, -KorKof), x = KorKof)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.5) +
+  geom_text(aes(label = round(KorKof, 2)), hjust = 1.2, size = 3) +
+  labs(title = "Korrelation mit Demokratiezufriedenheit", y = "Variables", x = "Correlation") +
+  theme_minimal() + xlim(-0.6, +0.6)
+```
+### AfD-Sympathie
+```{r AfD}
+
+
+DF$afdsym_pred = c("kp20_160p1","kp20_020","wost","school","alter","male","pp20", "ex20", "ief20", "eef20","kp20_1600","kp20_1933","kp19_1610","kp20_010",
+                  "kp18_1681a","kp18_1681b","kp18_1681c","kp18_1681d",
+                  "kp17_1661a","kp17_1661c","kp17_1661d","kp17_1661e")
+
+DF$afdsym_cor =  
+  cor(DF$semdat$kp20_430i, DF$semdat[, DF$afdsym_pred], use = "pairwise.complete.obs")
+DF$afdsym_cor = DF$afdsym_cor[1,]
+DF$afdsym_cor = data.frame(variable = DF$afdsym_pred, KorKof = DF$afdsym_cor) 
+
+
+ggplot(DF$afdsym_cor, aes(y = reorder(variable, -KorKof), x = KorKof)) +
+  geom_bar(stat = "identity", fill = "steelblue", width = 0.5) +
+  geom_text(aes(label = round(KorKof, 2)), hjust = 1.2, size = 3) +
+  labs(title = "Korrelation mit AfD-Sympathie", y = "Variables", x = "Correlation") +
+  theme_minimal() + xlim(-0.6, +0.6)
+```
+:::
+
+## OLS-Models Medienvertrauen
+```{r}
+DF$semdat %<>% mutate(across("kp1_2601", ~ as.factor(.)))
+DF$mt$lm1 = lm(kp20_160p1 ~ school + wost + male + alter, DF$semdat) 
+DF$mt$lm2 = lm(kp20_160p1 ~ school + wost + male + alter + 
+                      kp20_010, DF$semdat) 
+DF$mt$lm3 = lm(kp20_160p1 ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20, DF$semdat) 
+DF$mt$lm4 = lm(kp20_160p1 ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20 +
+                      kp18_1681a + kp18_1681b + kp18_1681c + kp20_1600 + kp19_1610 + kp20_1933 + 
+                      kp17_1661a + kp17_1661c + kp17_1661d + kp17_1661f, DF$semdat) 
+
+
+Modell = c("MediaTrust_m1","MediaTrust_m2","MediaTrust_m3","MediaTrust_m4")
+map(DF$mt, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
+  gt %>%
+    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
+    fmt_number(decimals = 3, columns = "p.value")
+
+
+results = DF$mt %>%  map(., function(x) {
+  tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+    gt %>% fmt_number(decimals = 2) %>% 
+    tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+
+```
+
+::: {.panel-tabset}
+### Medienvertrauen Model 1
+```{r}
+results[[1]][[1]]
+```
+
+### Medienvertrauen Model 2
+```{r}
+results[[2]][[1]]
+```
+
+### Medienvertrauen Model 3
+```{r}
+results[[3]][[1]]
+```
+
+### Medienvertrauen Model 4
+```{r}
+results[[4]][[1]]
+```
+:::
+
+## OLS-Models Demokratiezufriedenheit
+```{r}
+
+DF$ds$lm1 = lm(kp20_020 ~ school + wost + male + alter, DF$semdat) 
+DF$ds$lm2 = lm(kp20_020 ~ school + wost + male + alter + 
+                      kp20_010, DF$semdat) 
+DF$ds$lm3 = lm(kp20_020 ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20, DF$semdat) 
+DF$ds$lm4 = lm(kp20_020 ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20 +
+                      kp18_1681a + kp18_1681b + kp18_1681c + kp20_1600 + kp19_1610 + kp20_1933 + 
+                      kp17_1661a + kp17_1661c + kp17_1661d + kp17_1661f, DF$semdat) 
+
+
+Modell = c("DemSat_m1","DemSat_m2","DemSat_m3","DemSat_m4")
+map(DF$ds, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
+  gt %>%
+    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
+    fmt_number(decimals = 3, columns = "p.value")
+
+
+results = DF$ds %>%  map(., function(x) {
+  tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+    gt %>% fmt_number(decimals = 2) %>% 
+    tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+```
+
+::: {.panel-tabset}
+### Demokratiezufriedenheit Model 1
+```{r}
+results[[1]][[1]]
+```
+
+### Demokratiezufriedenheit Model 2
+```{r}
+results[[2]][[1]]
+```
+
+### Demokratiezufriedenheit Model 3
+```{r}
+results[[3]][[1]]
+```
+
+### Demokratiezufriedenheit Model 4
+```{r}
+results[[4]][[1]]
+```
+:::
+
+## OLS-Models AfD-Sympathie
+```{r}
+
+DF$afd$lm1 = lm(kp20_430i ~ school + wost + male + alter, DF$semdat) 
+DF$afd$lm2 = lm(kp20_430i ~ school + wost + male + alter + 
+                      kp20_010, DF$semdat) 
+DF$afd$lm3 = lm(kp20_430i ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20, DF$semdat) 
+DF$afd$lm4 = lm(kp20_430i ~ school + wost + male + alter + 
+                      kp20_010 +
+                      pp20 + ex20 + ief20 + eef20 +
+                      kp18_1681a + kp18_1681b + kp18_1681c + kp20_1600 + kp19_1610 + kp20_1933 + 
+                      kp17_1661a + kp17_1661c + kp17_1661d + kp17_1661f, DF$semdat) 
+
+
+Modell = c("DemSat_m1","DemSat_m2","DemSat_m3","DemSat_m4")
+map(DF$afd, broom::glance) %>% list_rbind() %>% select(c("r.squared","adj.r.squared","statistic","p.value","nobs")) %>% cbind(Modell,.) %>% 
+  gt %>%
+    fmt_number(decimals = 2, columns = c("r.squared","adj.r.squared","statistic")) %>%
+    fmt_number(decimals = 3, columns = "p.value")
+
+
+results = DF$afd %>%  map(., function(x) {
+  tidy_output <- lm.beta::lm.beta(x) %>% broom::tidy(., conf.int = TRUE, conf.level = 0.5) %>%
+    gt %>% fmt_number(decimals = 2) %>% 
+    tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std_estimate), rows = p.value < 0.05)) %>% gt_theme_nytimes()
+  return(list(tidy_output)) 
+})
+
+```
+
+::: {.panel-tabset}
+### AfD-Sympathie Model 1
+```{r}
+results[[1]][[1]]
+```
+
+### AfD-Sympathie Model 2
+```{r}
+results[[2]][[1]]
+```
+
+### AfD-Sympathie Model 3
+```{r}
+results[[3]][[1]]
+```
+
+### AfD-Sympathie Model 4
+```{r}
+results[[4]][[1]]
+```
+:::
