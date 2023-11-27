@@ -1,51 +1,23 @@
 ---
 title: "GLES Panel"
 subtitle: "Medienvertrauen explained"
-author:
-- "Reimar ZEH"
-- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
-date: "`r format(Sys.time(), '%m.%d.%Y')`"
-editor: source
-toc: true
-number-sections: true
-highlight-style: pygments
-theme: cosmo
-format:
-  html: 
-    code-fold: true
-    code-overflow: wrap
-    html-math-method: katex
-    self-contained: true
-    page-layout: full
-    grid:
-      sidebar-width: 100px
-      body-width: 1200px
-      margin-width: 200px
-      gutter-width: 1.5rem
-execute: 
-  echo: false
-  eval: true
-  warning: false
 editor_options: 
   chunk_output_type: console
+execute: 
+  echo: true
+  eval: true
+  warning: false
 ---
 
-# Session Setup
 ## Global settings & Notes
 ```{r}
-# show chunk outputs in R-Markdown
-knitr::opts_chunk$set(echo = TRUE)
-# setting a seed
-set.seed(42)
-```
-## Load Packages
-```{r}
 rm(list= ls()) # start clean ####
+set.seed(42)
+
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(foreign,tidyverse,sjmisc,sjlabelled,sjPlot,Hmisc,gt,gtExtras,gtsummary,panelr,
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
                here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
-               psych,psychTools,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM,GPArotation,factoextra,
-               reghelper,DescTools)
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
 ```
 ## Prepare Lists
 ```{r}
@@ -55,7 +27,7 @@ DF = list()
 # Prepare Analysis
 ## Load Data
 ```{r Laod Data}
-DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7729.qs"))
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
 ```
 
 ## generate Lists for scales
@@ -66,11 +38,11 @@ DF$vnam_list <- list(
   ex = c("_060e","_060f","_060g","_060i","_060j","_060k","_060b","_060d","_060h"),
   ief = c("_050k","_050h"),
   eef = c("_050a","_050e"))
-DF$vwav_list <- list(tr = 8,
-  pp = 5,
-  ex = 2,
-  ief = 5,
-  eef = 5)
+DF$vwav_list <- list(tr = 20,
+  pp = 20,
+  ex = 20,
+  ief = 20,
+  eef = 20)
 # Loop through vwav and vnam lists
 for (type in names(DF$vnam_list)) {
   for (welle in DF$vwav_list[[type]]) {
@@ -88,8 +60,8 @@ DF$semdat = DF$orgdat %>%
   select("lfdn", "kp1_2601", "kpa2_2601","kp1_2320", "kpx_2280","kpa1_2320", "kpx_2290s",
          contains("_1621"),
          all_of(DF$allscales),
-         starts_with(c("kp7_","kp8_")) & contains(c("_1616","_1681")),
-         starts_with(c("kp7_","kp8_")) & ends_with(c("_010","_160p","_1500","_020","_1600","_1610","_1701aa","_1702","_1933")))
+         starts_with(c("kp20","kp21")) & contains(c("_1616","_1681")),
+         starts_with(c("kp20","kp21")) & ends_with(c("_010","_160p","_1500","_020","_1600","_1610","_1701aa","_1702","_1933")))
 
 ```
 ## Recode Vars

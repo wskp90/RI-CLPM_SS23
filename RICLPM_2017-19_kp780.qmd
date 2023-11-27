@@ -22,10 +22,10 @@ pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
 ## Prepare Lists
 DF = list(
   setup = tibble(
-    wave1 = "kp4",
-    wave2 = "kp5",
-    wave3 = "kp7",
-    x = "_1681a",
+    wave1 = "kp8",
+    wave2 = "kp10",
+    wave3 = "kp12",
+    x = "_780",
     y = "_430i"
   )
 )
