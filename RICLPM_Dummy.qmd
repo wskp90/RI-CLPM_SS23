@@ -1,0 +1,236 @@
+---
+author:
+- "[Lehrstuhl für Kommunikationswissenschaft](https://www.kowi.rw.fau.de)"
+date: last-modified
+date-format: "DD.MM.YYYY"
+title: "Projektseminar 23-24"
+subtitle: "Projekttilel"
+editor_options: 
+  chunk_output_type: console
+execute: 
+  echo: true
+  eval: true
+  warning: false
+editor: source
+toc: true
+number-sections: true
+highlight-style: pygments
+theme: cosmo
+format:
+  html: 
+    code-fold: true
+    code-overflow: wrap
+    html-math-method: katex
+    self-contained: true
+    page-layout: full
+    grid:
+      sidebar-width: 100px
+      body-width: 1500px
+      margin-width: 200px
+      gutter-width: 1.5rem
+---
+
+## Global settings & Notes
+```{r}
+rm(list= ls()) # start clean ####
+set.seed(42)
+
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
+               here,fs,usethis,labelled,janitor,magrittr,qs,tictoc,
+               psych,easystats,irr,lavaan,semTools,semPlot,broom,tidySEM)
+
+## Hier relevante Wellen und Variablen eingeben
+DF = list(
+  setup = tibble(
+    wave1 = "kp10",
+    wave2 = "kp12",
+    wave3 = "kp14",
+    wave4 = "kp20",
+    wave5 = "kp23",
+    wave6 = "kpxx",
+    x = "_430e",
+    y = "_430i",
+    group = "kp10_010"
+    )
+)
+
+
+## Verzeichnisse anpassen!
+DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
+source(here("CLPMulder.R"))
+source(here("RICLPMulder.R"))
+
+```
+
+## Prepare Analysis
+#### Select Vars
+
+```{r Select and Recode}
+## Uu. Anzahl der Wellen anpassen (paste0(DF$setup$waveX))
+DF$semdat = DF$orgdat %>%
+  select(paste0(DF$setup$group),ends_with(c(paste0(DF$setup$x),paste0(DF$setup$y))) & starts_with(c(paste0(DF$setup$wave1),paste0(DF$setup$wave2),paste0(DF$setup$wave3),paste0(DF$setup$wave4),paste0(DF$setup$wave5))))
+
+DF$Xtitle <- label(eval(parse(text = paste0("DF$semdat$",DF$setup$wave1,DF$setup$x))))
+DF$Ytitle <- label(eval(parse(text = paste0("DF$semdat$",DF$setup$wave1,DF$setup$y))))
+```
+
+### Recode Vars for sem
+
+```{r}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~ as_numeric(.)))
+
+negative_indices <- which(DF$semdat < 0, arr.ind = TRUE)
+DF$negvals <- DF$semdat[negative_indices] %>% as.vector() %>% unique() %>% sort()
+rm(negative_indices)
+go_away <- function(x, na_values) {
+  x[x %in% na_values] <- NA
+  return(x)
+}
+DF$semdat = DF$semdat %>% mutate(across(everything(), ~(go_away(., DF$negvals))))
+```
+
+## Descriptives
+### Frequencies
+```{r}
+DF$semdat %>% map(., ~descr(.,show = c("label","n","mean","md","sd","se","range"))) %>% reduce(bind_rows) %>% gt %>%
+  fmt_number(decimals = 3, columns = c(mean,sd,se))
+```
+::: {.panel-tabset}
+### Plot X
+```{r}
+summary_data <- DF$semdat %>% select(ends_with(paste0(DF$setup$x))) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = paste0(DF$Xtitle),
+       x = "Wave",
+       y = paste0("kpx",DF$setup$x)) +
+theme_minimal()
+
+```
+
+### Plot Y
+```{r}
+summary_data <- DF$semdat %>% select(ends_with(paste0(DF$setup$y))) %>% 
+  pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
+  mutate(time = as_numeric(str_extract(variable, "\\d+"))) %>% 
+  group_by(time) %>%
+  summarise(mean_value = mean(value, na.rm = TRUE),
+            sd_value = sd(value, na.rm = TRUE),
+            n = sum(!is.na(value))) %>% 
+  mutate(ci_lower = mean_value - 1.96 * (sd_value / sqrt(n)),
+         ci_upper = mean_value + 1.96 * (sd_value / sqrt(n)))
+
+
+ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = ci_lower, ymax = ci_upper), alpha = 0.3) +
+  labs(title = paste0(DF$Ytitle),
+       x = "Wave",
+       y = paste0("kpx",DF$setup$y)) +
+  theme_minimal()
+```
+:::
+
+## Prepare for SEM
+
+### Rename Vars for sem
+
+```{r}
+# Für x&y Anpassungen an die Zahl der Wellen vornehmen
+DF$semdat = DF$semdat %>% rename(x1 = paste0(DF$setup$wave1,DF$setup$x), x2 = paste0(DF$setup$wave2,DF$setup$x),x3 = paste0(DF$setup$wave3,DF$setup$x),x4 = paste0(DF$setup$wave4,DF$setup$x),x5 = paste0(DF$setup$wave5,DF$setup$x),
+                                 y1 = paste0(DF$setup$wave1,DF$setup$y), y2 = paste0(DF$setup$wave2,DF$setup$y), y3 = paste0(DF$setup$wave3,DF$setup$y), y4 = paste0(DF$setup$wave4,DF$setup$y), y5 = paste0(DF$setup$wave5,DF$setup$y))
+```
+
+
+::: {.panel-tabset}
+### Check Correlations
+```{r}
+DF$semdat %>% select(contains(c("x","y"))) %>% 
+  psych::cor.plot(.,stars = T)
+
+```
+
+### Check ICC X
+```{r}
+cat(paste0(DF$Xtitle))
+DF$semdat %>% 
+  select(starts_with("x")) %>% 
+  na.omit() %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+```
+
+### Check ICC X
+```{r}
+cat(paste0(DF$Ytitle))
+DF$semdat %>% 
+  select(starts_with("x")) %>% 
+  na.omit() %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+```
+:::
+
+## SEM
+### Estimate Models
+
+```{r Estimate Models}
+tic()
+# Achtung! m5u auf die Zahl der gewünschten Wellen anpassen
+DF$lv_fit$cl$mu <- lavaan(DF$modef$cl$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mu <- lavaan(DF$modef$ri$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+toc()
+```
+
+### Compare Model Fit
+```{r Model fit}
+DF$lv_fit %>% map_depth(., 2, ~broom::glance(.)) %>% reduce(bind_rows) %>% unnest_wider(mu) %>% select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% 
+  gt %>% fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% 
+  cols_add(Modell = c("CLPM","RI-CLPM")) %>% cols_move_to_start(columns = Modell) %>% gt_theme_nytimes()
+```
+
+### Graphs
+```{r Prepare Graphs}
+DF$cl_layout = openxlsx::read.xlsx(here("Clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+DF$RI_layout = openxlsx::read.xlsx(here("RI-clpm_t6_layout.xlsx")) %>%
+  mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
+
+```
+### CLPM
+```{r}
+DF$cl_graph = prepare_graph(DF$lv_fit$cl$mu, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges") 
+plot(DF$cl_graph)
+```
+### RI-CLPM
+```{r}
+DF$ric_graph = prepare_graph(DF$lv_fit$ri$mu, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+plot(DF$ric_graph)
+```
+
+### Crosslagged-Coeffs CLPM
+```{r}
+broom::tidy(DF$lv_fit$cl$mu) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+```
+
+### Crosslagged-Coeffs RI-CLPM
+```{r}
+broom::tidy(DF$lv_fit$ri$mu) %>% filter(.,op =="~" & grepl("Lx", term) & grepl("Ly", term)) %>% 
+  select(., c(term, op, estimate,std.error,p.value,std.all)) %>% gt %>% 
+  fmt_number(decimals = 2, columns = c(estimate,std.error,std.all)) %>% fmt_number(decimals = 3, columns = p.value) %>%
+  tab_style(style = cell_fill(color = "lightgreen"), locations = cells_body(columns = c(term,estimate,std.all), rows = p.value < 0.05)) %>%
+  gt_theme_nytimes()
+```
