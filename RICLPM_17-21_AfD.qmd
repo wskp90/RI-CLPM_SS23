@@ -126,10 +126,6 @@ ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
 ### Rename Vars for sem
 
 ```{r}
-# DF$semdat = DF$semdat %>% mutate(afd_max = if_any(contains("430i"), ~.x > 1)) # Alle identifizieren, die AfD nicht immer scheiße finden.
-# DF$semdat = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
-
-
 DF$semdat = DF$semdat %>% rename(x1 = paste0(DF$setup$wave1,DF$setup$x), x2 = paste0(DF$setup$wave2,DF$setup$x),
                                  x3 = paste0(DF$setup$wave3,DF$setup$x), x4 = paste0(DF$setup$wave4,DF$setup$x),
                                  x5 = paste0(DF$setup$wave5,DF$setup$x), x6 = paste0(DF$setup$wave6,DF$setup$x),
@@ -137,27 +133,23 @@ DF$semdat = DF$semdat %>% rename(x1 = paste0(DF$setup$wave1,DF$setup$x), x2 = pa
                                  y3 = paste0(DF$setup$wave3,DF$setup$y), y4 = paste0(DF$setup$wave4,DF$setup$y),
                                  y5 = paste0(DF$setup$wave5,DF$setup$y), y6 = paste0(DF$setup$wave6,DF$setup$y)
                                  )
+DF$semdat = DF$semdat %>% mutate(afd_max = if_any(contains("y"), ~.x > 1)) # Alle identifizieren, die AfD nicht immer scheiße finden.
+DF$semdatn = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
+
+
+
+DF$semdat = DF$semdat %>% mutate(afd_max = rowSums(select(., starts_with("y")) > 1, na.rm = TRUE) > 0) %>%
+  mutate(afd_max = if_else(rowSums(!is.na(select(., starts_with("y")))) == 0, NA, afd_max))
+DF$semdatn = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
+
 ```
 
-```{r}
-# DF$semdat = DF$semdat %>% mutate(y1 = log(y1),
-#                               y2 = log(y2),
-#                               y3 = log(y3))
-
-```
 
 ::: {.panel-tabset}
 ### Check Correlations
 ```{r}
 DF$semdat %>% 
   psych::cor.plot(.,stars = T)
-# DF$semdat %>% select(ends_with(c("_160p","_430i"))) %>% 
-#   gather(key, value) %>% drop_na() %>%
-#   separate_wider_delim(key, delim = "_", names = c("Welle", "Var")) %>%
-#   ggplot(aes(x = value, color = Welle)) +
-#   geom_density(adjust = 1.6) +
-#   facet_wrap(vars(Var)) +
-#   theme_classic()
 
 ```
 
@@ -166,18 +158,28 @@ DF$semdat %>%
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 cat(paste0(DF$Xtitle))
 DF$semdat %>% 
-  select(contains(c("x"))) %>% na.omit() %>% irr::icc(., model = "t", type = "c", unit = "s")
-DF$semdat %>% 
   select(starts_with("x")) %>% 
   na.omit() %>% 
   mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+DF$semdatn %>% 
+  select(starts_with("x")) %>% 
+  na.omit() %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+
 ```
 
 ### Check ICC X
 ```{r}
 cat(paste0(DF$Ytitle))
-DF$semdat %>%
-  select(contains(c("y"))) %>% irr::icc()
+DF$semdat %>% 
+  select(starts_with("y")) %>% 
+  na.omit() %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+DF$semdatn %>% 
+  select(starts_with("y")) %>% 
+  na.omit() %>% 
+  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
+
 ```
 :::
 
@@ -190,17 +192,24 @@ DF$lv_fit$cl$mc <- lavaan(DF$modef$cl$m6c,  data=DF$semdat, missing="ML", estima
 DF$lv_fit$cl$mu <- lavaan(DF$modef$cl$m6u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_fit$ri$mc <- lavaan(DF$modef$ri$m6c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 DF$lv_fit$ri$mu <- lavaan(DF$modef$ri$m6u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mcn <- lavaan(DF$modef$ri$m6c,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mun <- lavaan(DF$modef$ri$m6u,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
 toc()
 ```
 
 ### Compare Model Fit
 ```{r Model fit}
 
-DF$lv_fit %>% map_depth(., 2, ~broom::glance(.)) %>% reduce(bind_rows) %>% reduce(bind_rows) %>% 
+DF$lv_fit %>% map_depth(., 2, ~broom::glance(.)) %>% reduce(bind_rows) %>% reduce(bind_rows) %>% na.omit() %>% 
   select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC)) %>% 
   gt %>% fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% 
-  cols_add(Modell = c("CLPM fixed","RI-CLPM fixed","CLPM free","RI-CLPM free")) %>% cols_move_to_start(columns = Modell) %>% gt_theme_nytimes()
+  cols_add(Modell = c("CLPM fixed","RI-CLPM fixed","CLPM free","RI-CLPM free","RI-N fix","RI-N free")) %>% cols_move_to_start(columns = Modell) %>% gt_theme_nytimes()
 
+test = DF$lv_fit %>% map_depth(., 2, ~broom::glance(.))
+test %>% reduce(bind_rows) %>%
+  reduce(bind_rows) %>%
+  na.omit() %>% 
+  view()
 ```
 
 ### Graphs
