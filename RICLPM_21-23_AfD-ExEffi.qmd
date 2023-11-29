@@ -1,6 +1,6 @@
 ---
 title: "GLES Panel"
-subtitle: "AfD Sympathie 2017-23"
+subtitle: "AfD Sympathie 2021-23"
 editor_options: 
   chunk_output_type: console
 execute: 
@@ -23,18 +23,27 @@ pacman::p_load(sjlabelled,foreign,tidyverse,sjmisc,Hmisc,panelr,gt,gtExtras,
 ## Prepare Lists
 DF = list(
   setup = tibble(
-    wave1 = "kp8",
-    wave2 = "kp9",
-    wave3 = "kp10",
-    wave4 = "kp12",
-    wave5 = "kp14",
-    wave6 = "kp16",
-    x = "_160p",
+    wave1 = "kp20",
+    wave2 = "kp21",
+    wave3 = "kp22",
+    wave4 = "kp23",
+    wave5 = "kp24",
+#    wave6 = "kpxx",
+    x = "_eef",
     y = "_430i",
-    grp = "_010"
-  )
-)
-
+#    z = "_020",
+#    i = "_eef",
+    grp = "_010",
+    s1 = "_050a",
+    s2 = "_050e"
+                )
+          )
+DF$scale$eef = DF$setup %>% select(starts_with("s")) %>% unlist() %>% as.vector()
+DF$scale$wvs = DF$setup %>% select(starts_with("wave")) %>% unlist() %>% as.vector()
+for (welle in DF$scale$wvs) {
+    variable_names <- paste(welle, DF$scale$eef, sep = "")
+    DF$gles.scales[[paste0(welle)]] <- unlist(variable_names)}
+DF$scale$vars = unlist(DF$gles.scales) %>% as.vector()
 
 ## Load Data
 DF$orgdat = qread(paste0(Sys.getenv("FAUBOX"),"/GLES/za6838/za6838_7730.qs"))
@@ -43,17 +52,34 @@ source(here("script/RICLPMulder.R"))
 # source(here("script/LGCMBuchanan.R"))
 ```
 
+## CL-Models
+::: {layout-ncol="2" layout-valign="bottom"}
+![CLPM](img/clpm.png)
+
+![RI-CLPM](img/riclpm.png)
+:::
+
+
 ## Prepare Analysis
 
 #### Select Vars
 
 ```{r Select and Recode}
 DF$semdat = DF$orgdat %>%
-  select(ends_with(c(paste0(DF$setup$x),paste0(DF$setup$y),paste0(DF$setup$grp))) &
-           starts_with(c(paste0(DF$setup$wave1),paste0(DF$setup$wave2),paste0(DF$setup$wave3),paste0(DF$setup$wave4),paste0(DF$setup$wave5),paste0(DF$setup$wave6))))
+  select(ends_with(c(paste0(DF$setup$s1),
+                     paste0(DF$setup$s2),
+                     paste0(DF$setup$y),
+                     paste0(DF$setup$grp))) &
+           starts_with(c(paste0(DF$setup$wave1),
+                         paste0(DF$setup$wave2),
+                         paste0(DF$setup$wave3),
+                         paste0(DF$setup$wave4),
+                         paste0(DF$setup$wave5))))
+# Depot: paste0(DF$setup$wave4),paste0(DF$setup$wave5),paste0(DF$setup$wave6)
+# ,paste0(DF$setup$s1),paste0(DF$setup$s2),paste0(DF$setup$z)
 
 # Evaluate the expression and get the label
-DF$Xtitle <- label(eval(parse(text = paste0("DF$semdat$",DF$setup$wave1,DF$setup$x))))
+DF$Xtitle <- "Ext. Pol. Effi."
 DF$Ytitle <- label(eval(parse(text = paste0("DF$semdat$",DF$setup$wave1,DF$setup$y))))
 ```
 
@@ -78,18 +104,17 @@ DF$semdat = DF$semdat %>%  mutate(pol_int = dicho(pol_int_m, dich.by = "median")
 DF$semdat = DF$semdat %>% mutate(pol_int =factor(pol_int, labels = c("low PI","high PI"))) 
 
 
+for (welle in DF$scale$wvs) {
+  DF$semdat <- DF$semdat %>%
+    mutate(
+      !!paste(welle, "_eef", sep = "") := rowSums(
+        select(., all_of(DF$gles.scales[[paste0(welle)]])), na.rm = F))}
+
 # DF$semdat = DF$semdat %>% 
 #    mutate(valid_cases_count = rowSums(across(ends_with("_010"), ~!is.na(.)))) # Zähle gültige Fälle
 ```
 
 ## Descriptives
-
-### Frequencies
-
-```{r}
-DF$semdat %>% map(., ~descr(.,show = c("label","n","mean","md","sd","se","range"))) %>% reduce(bind_rows) %>% gt %>%
-  fmt_number(decimals = 3, columns = c(mean,sd,se))
-```
 
 ::: panel-tabset
 ### Plot X
@@ -117,7 +142,6 @@ theme_minimal()
 ```
 
 ### Plot Y
-
 ```{r}
 summary_data <- DF$semdat %>% select(ends_with(paste0(DF$setup$y))) %>% 
   pivot_longer(cols = starts_with("kp"), names_to = "variable", values_to = "value") %>% 
@@ -138,48 +162,47 @@ ggplot(summary_data, aes(x = factor(time), y = mean_value, group=1)) +
        y = paste0("kpx",DF$setup$y)) +
   theme_minimal()
 ```
+### Frequencies
+```{r}
+DF$semdat %>% map(., ~descr(.,show = c("label","n","mean","md","sd","se","range"))) %>% reduce(bind_rows) %>% gt %>%
+  fmt_number(decimals = 3, columns = c(mean,sd,se))
+```
 :::
 
-## Prepare for SEM
 
+## SEM Media Trust
 ### Rename Vars for sem
 
 ```{r}
-DF$semdat = DF$semdat %>% rename(x1 = paste0(DF$setup$wave1,DF$setup$x), x2 = paste0(DF$setup$wave2,DF$setup$x),
-                                 x3 = paste0(DF$setup$wave3,DF$setup$x), x4 = paste0(DF$setup$wave4,DF$setup$x),
-                                 x5 = paste0(DF$setup$wave5,DF$setup$x), x6 = paste0(DF$setup$wave6,DF$setup$x),
-                                 y1 = paste0(DF$setup$wave1,DF$setup$y), y2 = paste0(DF$setup$wave2,DF$setup$y),
-                                 y3 = paste0(DF$setup$wave3,DF$setup$y), y4 = paste0(DF$setup$wave4,DF$setup$y),
-                                 y5 = paste0(DF$setup$wave5,DF$setup$y), y6 = paste0(DF$setup$wave6,DF$setup$y)
-                                 )
+DF$semdat = DF$semdat %>% rename(x1 = paste0(DF$setup$wave1,DF$setup$x),
+                                 x2 = paste0(DF$setup$wave2,DF$setup$x),
+                                 x3 = paste0(DF$setup$wave3,DF$setup$x),
+                                 x4 = paste0(DF$setup$wave4,DF$setup$x),
+                                 x5 = paste0(DF$setup$wave5,DF$setup$x),
+                                 y1 = paste0(DF$setup$wave1,DF$setup$y),
+                                 y2 = paste0(DF$setup$wave2,DF$setup$y),
+                                 y3 = paste0(DF$setup$wave3,DF$setup$y),
+                                 y4 = paste0(DF$setup$wave4,DF$setup$y),
+                                 y5 = paste0(DF$setup$wave5,DF$setup$y))
+# Depot
+#  x4 = paste0(DF$setup$wave4,DF$setup$x), x5 = paste0(DF$setup$wave5,DF$setup$x), x6 = paste0(DF$setup$wave6,DF$setup$x),
+#  y4 = paste0(DF$setup$wave4,DF$setup$y), y5 = paste0(DF$setup$wave5,DF$setup$y), y6 = paste0(DF$setup$wave6,DF$setup$y)
+                                 
 DF$semdat = DF$semdat %>% mutate(afd_max = if_any(contains("y"), ~.x > 1)) # Alle identifizieren, die AfD nicht immer scheiße finden.
 DF$semdatn = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
-
-
 
 DF$semdat = DF$semdat %>% mutate(afd_max = rowSums(select(., starts_with("y")) > 1, na.rm = TRUE) > 0) %>%
   mutate(afd_max = if_else(rowSums(!is.na(select(., starts_with("y")))) == 0, NA, afd_max))
 DF$semdatn = DF$semdat %>% filter(.,afd_max==TRUE) # Alle raus, die AFD immer scheiße finden
 
 ```
-
 ::: panel-tabset
-### Check Correlations ALL
-
+### Check Correlations 
 ```{r}
-DF$semdat %>% select(starts_with(c("x","y"))) %>% 
+DF$semdat %>% select(c(starts_with("x"),starts_with("y"))) %>% 
   psych::cor.plot(.,stars = T)
 ```
-
-### Check Correlations AfD-Fans
-
-```{r}
-DF$semdatn %>% select(starts_with(c("x","y"))) %>% 
-  psych::cor.plot(.,stars = T)
-```
-
 ### Check ICC X
-
 ```{r}
 # ICC requires VARs to be numeric, even when they seem to are numeric -> mutate!
 cat(paste0(DF$Xtitle))
@@ -187,66 +210,44 @@ DF$semdat %>%
   select(starts_with("x")) %>% 
   na.omit() %>% 
   mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
-DF$semdatn %>% 
-  select(starts_with("x")) %>% 
-  na.omit() %>% 
-  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
-
 ```
-
-### Check ICC X
-
+### Check ICC Y
 ```{r}
 cat(paste0(DF$Ytitle))
 DF$semdat %>% 
   select(starts_with("y")) %>% 
   na.omit() %>% 
   mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
-DF$semdatn %>% 
-  select(starts_with("y")) %>% 
-  na.omit() %>% 
-  mutate(across(everything(), ~as.numeric(.))) %>% psych::ICC(.,missing=TRUE)
-
 ```
 :::
 
-## SEM
 
-::: {layout-ncol="2" layout-valign="bottom"}
-![CLPM](img/clpm.png)
-![RI-CLPM](img/riclpm.png)
 ### Estimate Models
-```{r Estimate Models}
+```{r Estimate Mod1}
 tic()
-DF$lv_fit$cl$mc <- lavaan(DF$modef$cl$m6c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_fit$cl$mu <- lavaan(DF$modef$cl$m6u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_fit$ri$mc <- lavaan(DF$modef$ri$m6c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_fit$ri$mu <- lavaan(DF$modef$ri$m6u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_fit$ri$mcn <- lavaan(DF$modef$ri$m6c,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-DF$lv_fit$ri$mun <- lavaan(DF$modef$ri$m6u,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
-# DF$lv_fit$ri$mcg <- lavaan(DF$modef$ri$m6c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int")
-DF$lv_fit$ri$mug <- lavaan(DF$modef$ri$m6u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int")
+DF$lv_fit$cl$mc <- lavaan(DF$modef$cl$m5c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$cl$mu <- lavaan(DF$modef$cl$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mc <- lavaan(DF$modef$ri$m5c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mu <- lavaan(DF$modef$ri$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mcn <- lavaan(DF$modef$ri$m5c,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+DF$lv_fit$ri$mun <- lavaan(DF$modef$ri$m5u,  data=DF$semdatn, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T)
+# DF$lv_fit$ri$mcg <- lavaan(DF$modef$ri$m5c,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int")
+DF$lv_fit$ri$mug <- lavaan(DF$modef$ri$m5u,  data=DF$semdat, missing="ML", estimator = "MLR", meanstructure = T, int.ov.free = T, group = "pol_int")
 toc()
 ```
 
 ### Compare Model Fit
 
-```{r Model fit}
+```{r Model fit 1}
 #| echo: false
 DF$lv_fit %>% map_depth(., 2, ~broom::glance(.)) %>% reduce(bind_rows) %>% reduce(bind_rows) %>% na.omit() %>% 
   select(c(cfi,tli,agfi,rmsea,srmr,AIC,BIC,nobs)) %>% 
   gt %>% fmt_number(decimals = 3, columns = c(cfi,tli,agfi,rmsea,srmr)) %>% 
   cols_add(Modell = c("CLPM fixed","RI-CLPM fixed","CLPM free","RI-CLPM free","RI-N fix","RI-N free","RI-G free")) %>% cols_move_to_start(columns = Modell) %>% gt_theme_nytimes()
-
-# test = DF$lv_fit %>% map_depth(., 2, ~broom::glance(.))
-# test %>% reduce(bind_rows) %>%
-#   reduce(bind_rows) %>%
-#   na.omit() %>% 
-#   view()
 ```
 
 ### Graphs
-```{r Prepare Graphs}
+```{r Prepare Graphs 1}
 #| echo: false
 DF$cl_layout = openxlsx::read.xlsx(here("script/Clpm_t6_layout.xlsx")) %>%
   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
@@ -256,8 +257,8 @@ DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t6_layout.xlsx")) %>%
 #   mutate(across(everything(), ~rec(., rec = "-99=NA;else = copy")))
 ```
 
-::: panel-tabset
 ### CLPM
+
 ```{r}
 DF$cl_graph = prepare_graph(DF$lv_fit$cl$mu, layout = DF$cl_layout) %>% edit_graph({label_location = 0.7}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges") 
 DF$cl_graph$edges %<>% filter(!(from == to))
@@ -266,13 +267,16 @@ plot(DF$cl_graph)
 ```
 
 ### RI-CLPM
+
 ```{r}
 DF$ric_graph = prepare_graph(DF$lv_fit$ri$mu, layout = DF$RI_layout) %>% edit_graph({label_location = 0.7}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
 DF$ric_graph$edges %<>% filter(!(from == to))
 DF$ric_graph$nodes %<>% mutate(label = name)
 plot(DF$ric_graph)
 ```
+
 ### RI-CLPM Gruppen
+
 ```{r}
 DF$rig_graph = prepare_graph(DF$lv_fit$ri$mug, layout = DF$cl_layout) %>% edit_graph({label_location = 0.7}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
 DF$rig_graph$edges %<>% filter(!(from == to))
@@ -280,11 +284,9 @@ DF$rig_graph$nodes %<>% mutate(label = name)
 plot(DF$rig_graph)
 ```
 
-:::
-
 ### Crosslagged-Coeffs RI-CLPM
 
-```{r Define Tables}
+```{r Define Tables 1}
 #| echo: false
 ri_crosslagged = DF$lv_fit$ri %>%  map(., function(x) {
   tidy_output <- broom::tidy(x) %>% filter(.,(grepl("RIx", term) & grepl("RIy", term))|(op =="~" & grepl("Lx", term) & grepl("Ly", term))) %>% 
@@ -304,26 +306,31 @@ ri_crosslagged = DF$lv_fit$ri %>%  map(., function(x) {
 
 ::: panel-tabset
 ### RI-CLPM fixed
+
 ```{r}
 ri_crosslagged$mc[[1]]
 ```
 
 ### RI-CLPM free
+
 ```{r}
 ri_crosslagged$mu[[1]]
 ```
 
 ### RI-CLPM fixed ohne AfD-Hater
+
 ```{r}
 ri_crosslagged$mcn[[1]]
 ```
 
 ### RI-CLPM free ohne AfD-Hater
+
 ```{r}
 ri_crosslagged$mun[[1]]
 ```
 
-### RI-CLPM free hohes polInt
+### RI-CLPM free niedriges polInt
+
 ```{r}
 #| echo: false
 broom::tidy(DF$lv_fit$ri$mug) %>% filter(.,(grepl("RIx", term) & grepl("RIy", term))|(op =="~" & grepl("Lx", term) & grepl("Ly", term))) %>%
@@ -333,7 +340,8 @@ broom::tidy(DF$lv_fit$ri$mug) %>% filter(.,(grepl("RIx", term) & grepl("RIy", te
   gt_theme_nytimes()
 ```
 
-### RI-CLPM free niedriges polInt
+### RI-CLPM free hohes polInt
+
 ```{r}
 #| echo: false
 broom::tidy(DF$lv_fit$ri$mug) %>% filter(.,(grepl("RIx", term) & grepl("RIy", term))|(op =="~" & grepl("Lx", term) & grepl("Ly", term))) %>%

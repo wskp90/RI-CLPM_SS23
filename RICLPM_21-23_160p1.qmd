@@ -175,6 +175,11 @@ DF$semdat %>%
 
 ## SEM
 ### Estimate Models
+::: {layout-ncol="2" layout-valign="bottom"}
+![CLPM](img/clpm.png)
+
+![RI-CLPM](img/riclpm.png)
+:::
 
 ```{r Estimate Models}
 tic()
@@ -203,12 +208,16 @@ DF$RI_layout = openxlsx::read.xlsx(here("script/RI-clpm_t6_layout.xlsx")) %>%
 ::: {.panel-tabset}
 ### CLPM
 ```{r}
-DF$cl_graph = prepare_graph(DF$lv_fit$cl$m3u, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges") 
+DF$cl_graph = prepare_graph(DF$lv_fit$cl$m3u, layout = DF$cl_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>% edit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$cl_graph$edges %<>% filter(!(from == to))
+DF$cl_graph$nodes %<>% mutate(label = name)
 plot(DF$cl_graph)
 ```
 ### RI-CLPM
 ```{r}
-DF$ric_graph = prepare_graph(DF$lv_fit$ri$m3u, layout = DF$RI_layout) %>% edit_graph({label_location = 0.8}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$ric_graph = prepare_graph(DF$lv_fit$ri$m3u, layout = DF$RI_layout) %>% edit_graph({label_location = 0.6}, element = "edges") %>%edit_graph({ label = paste(est_sig_std)}, element="edges")
+DF$ric_graph$edges %<>% filter(!(from == to))
+DF$ric_graph$nodes %<>% mutate(label = name)
 plot(DF$ric_graph)
 ```
 
